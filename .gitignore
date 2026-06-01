@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+infrastructure/env.json
+
+# SAM / AWS
+.aws-sam/
+samconfig.toml
+*.zip
+
+# Vercel
+.vercel/
+
+# Playwright
+playwright/.local-browsers/
+
+# Editors
+.DS_Store
+.idea/
+.vscode/
+*.swp

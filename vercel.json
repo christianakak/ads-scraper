@@ -1,0 +1,11 @@
+{
+  "functions": {
+    "main.py": {
+      "runtime": "python3.12",
+      "maxDuration": 60
+    }
+  },
+  "routes": [
+    { "src": "/(.*)", "dest": "main.py" }
+  ]
+}
