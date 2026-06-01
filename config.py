@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     # for end-to-end POC testing. Set False in production.
     adyntel_dummy_mode: bool = Field(default=True, alias="ADYNTEL_DUMMY_MODE")
 
+    # Site Scanner — Browserless.io (managed Chromium)
+    site_scanner_dummy_mode: bool = Field(default=True, alias="SITE_SCANNER_DUMMY_MODE")
+    use_local_browser: bool = Field(default=False, alias="USE_LOCAL_BROWSER")
+
     # Free APIs
     google_pagespeed_api_key: str = Field(default="", alias="GOOGLE_PAGESPEED_API_KEY")
     # Legacy — kept as fallback only

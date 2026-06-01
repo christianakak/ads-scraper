@@ -1,0 +1,40 @@
+{
+  "_scenario": "data_driven_planner",
+  "_description": "Coming-soon site, 0 active listings, no pricing, no ads pixel, minimal tech stack",
+  "has_interactive_floor_plans": false,
+  "floor_plan_provider": null,
+  "has_virtual_tour": false,
+  "virtual_tour_provider": null,
+  "has_digital_reservation": false,
+  "reservation_url_pattern": null,
+  "cta_type": "other",
+  "cta_text": "Contact Us",
+  "pricing_transparency": "none",
+  "price_range_text": null,
+  "project_count": 0,
+  "has_chat_automation": false,
+  "chat_provider": null,
+  "has_cookie_consent": false,
+  "cookie_consent_provider": null,
+  "content_freshness_days": null,
+  "load_time_ms": 2650,
+  "mobile_score": 74,
+  "desktop_score": 82,
+  "tech_stack": {
+    "crm": null,
+    "analytics": "Google Analytics 4",
+    "has_facebook_pixel": false,
+    "has_google_tag_manager": false,
+    "has_cookie_consent": false,
+    "hosting": "Squarespace",
+    "chat_platform": null,
+    "raw_wappalyzer": {
+      "Google Analytics 4": {"version": "", "categories": ["Analytics"]},
+      "Squarespace": {"version": "", "categories": ["CMS", "Ecommerce"]}
+    }
+  },
+  "email_marketing_detected": false,
+  "page_links_count": 9,
+  "has_video_embed": false,
+  "schema_markup_detected": false
+}

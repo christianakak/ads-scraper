@@ -10,6 +10,7 @@ but ordering here documents intent.
 from core.registry import VerticalRegistry
 from verticals.proptech.collectors.dns_headers import DnsHeadersCollector
 from verticals.proptech.collectors.ad_intelligence import AdIntelligenceCollector
+from verticals.proptech.collectors.site_scanner import SiteScannerCollector
 
 RULES_PATH = "verticals/proptech/rules"
 RULES_VERSION = "1.0.0"
@@ -20,9 +21,9 @@ def register() -> None:
         vertical="proptech",
         collectors=[
             DnsHeadersCollector,       # Phase 0: screening gate (is_screening=True)
-            AdIntelligenceCollector,   # Phase 1: Meta Ad Library
-            # Phase 3 additions:
-            # SiteScannerCollector,
+            AdIntelligenceCollector,   # Phase 2: Adyntel Meta/Facebook ads
+            SiteScannerCollector,      # Phase 3: Browserless + Wappalyzer + PageSpeed
+            # Phase 4 additions:
             # PortalQualityCollector,
             # PlanningIntelCollector,
             # SocialReviewCollector,

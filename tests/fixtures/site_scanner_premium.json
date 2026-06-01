@@ -1,0 +1,42 @@
+{
+  "_scenario": "premium_visionary",
+  "_description": "1 luxury project, POA pricing, no virtual tour, no reservation, beautiful site but static",
+  "has_interactive_floor_plans": false,
+  "floor_plan_provider": null,
+  "has_virtual_tour": false,
+  "virtual_tour_provider": null,
+  "has_digital_reservation": false,
+  "reservation_url_pattern": null,
+  "cta_type": "enquire",
+  "cta_text": "Request Details",
+  "pricing_transparency": "poa",
+  "price_range_text": null,
+  "project_count": 1,
+  "has_chat_automation": false,
+  "chat_provider": null,
+  "has_cookie_consent": true,
+  "cookie_consent_provider": "OneTrust",
+  "content_freshness_days": 120,
+  "load_time_ms": 2100,
+  "mobile_score": 81,
+  "desktop_score": 89,
+  "tech_stack": {
+    "crm": null,
+    "analytics": "Google Analytics 4",
+    "has_facebook_pixel": true,
+    "has_google_tag_manager": false,
+    "has_cookie_consent": true,
+    "hosting": "Webflow",
+    "chat_platform": null,
+    "raw_wappalyzer": {
+      "Google Analytics 4": {"version": "", "categories": ["Analytics"]},
+      "Facebook Pixel": {"version": "", "categories": ["Analytics"]},
+      "Webflow": {"version": "", "categories": ["CMS", "Page builders"]},
+      "OneTrust": {"version": "", "categories": ["Cookie compliance"]}
+    }
+  },
+  "email_marketing_detected": false,
+  "page_links_count": 18,
+  "has_video_embed": true,
+  "schema_markup_detected": false
+}
