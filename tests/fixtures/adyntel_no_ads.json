@@ -1,0 +1,11 @@
+{
+  "_scenario": "data_driven_planner",
+  "_description": "0 ads — pre-launch developer, no digital advertising yet",
+  "page_id": null,
+  "page_name": null,
+  "number_of_ads": 0,
+  "unique_landing_pages": [],
+  "continuation_token": null,
+  "is_result_complete": true,
+  "results": []
+}

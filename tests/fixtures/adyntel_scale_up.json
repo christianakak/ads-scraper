@@ -1,0 +1,117 @@
+{
+  "_scenario": "scale_up_developer",
+  "_description": "5 ads, oldest running 47 days, CONTACT_US CTA — high ad fatigue, enquire funnel",
+  "page_id": "112233445566",
+  "page_name": "Meridian Homes UK",
+  "number_of_ads": 5,
+  "unique_landing_pages": ["meridian-homes.co.uk/enquire", "meridian-homes.co.uk/apartments"],
+  "continuation_token": null,
+  "is_result_complete": true,
+  "results": [
+    {
+      "ad_archive_id": "aaa111001",
+      "page_id": "112233445566",
+      "page_name": "Meridian Homes UK",
+      "is_active": true,
+      "start_date": 1776211200,
+      "end_date": null,
+      "total_active_time": null,
+      "publisher_platform": ["FACEBOOK", "INSTAGRAM"],
+      "snapshot": {
+        "body": {"text": "Enquire today about our stunning 2 & 3 bedroom apartments at Meridian Quarter. Limited units remaining. Contact us for more information on pricing and availability."},
+        "title": "Meridian Quarter — New Apartments",
+        "cta_type": "CONTACT_US",
+        "cta_text": "Contact Us",
+        "link_url": "https://meridian-homes.co.uk/enquire",
+        "display_format": "IMAGE",
+        "images": [{"url": "https://example.com/ad1.jpg"}],
+        "videos": [],
+        "page_like_count": 3420
+      }
+    },
+    {
+      "ad_archive_id": "aaa111002",
+      "page_id": "112233445566",
+      "page_name": "Meridian Homes UK",
+      "is_active": true,
+      "start_date": 1743638400,
+      "end_date": null,
+      "total_active_time": null,
+      "publisher_platform": ["FACEBOOK"],
+      "snapshot": {
+        "body": {"text": "3 bed homes from £385,000. Meridian Quarter, Zone 2 London. Register your interest today."},
+        "title": "Register Your Interest",
+        "cta_type": "LEARN_MORE",
+        "cta_text": "Learn More",
+        "link_url": "https://meridian-homes.co.uk/register",
+        "display_format": "IMAGE",
+        "images": [{"url": "https://example.com/ad2.jpg"}],
+        "videos": [],
+        "page_like_count": 3420
+      }
+    },
+    {
+      "ad_archive_id": "aaa111003",
+      "page_id": "112233445566",
+      "page_name": "Meridian Homes UK",
+      "is_active": true,
+      "start_date": 1777248000,
+      "end_date": null,
+      "total_active_time": null,
+      "publisher_platform": ["FACEBOOK", "INSTAGRAM"],
+      "snapshot": {
+        "body": {"text": "Now launching Phase 2 at Meridian Quarter. Enquire now — early buyers receive a complimentary furnishing package."},
+        "title": "Phase 2 Now Launching",
+        "cta_type": "CONTACT_US",
+        "cta_text": "Contact Us",
+        "link_url": "https://meridian-homes.co.uk/phase2",
+        "display_format": "VIDEO",
+        "images": [],
+        "videos": [{"url": "https://example.com/ad3.mp4"}],
+        "page_like_count": 3420
+      }
+    },
+    {
+      "ad_archive_id": "aaa111004",
+      "page_id": "112233445566",
+      "page_name": "Meridian Homes UK",
+      "is_active": true,
+      "start_date": 1778544000,
+      "end_date": null,
+      "total_active_time": null,
+      "publisher_platform": ["INSTAGRAM"],
+      "snapshot": {
+        "body": {"text": "New build apartments in the heart of the city. Find out more about Meridian Quarter."},
+        "title": "Meridian Quarter",
+        "cta_type": "LEARN_MORE",
+        "cta_text": "Learn More",
+        "link_url": "https://meridian-homes.co.uk/apartments",
+        "display_format": "IMAGE",
+        "images": [{"url": "https://example.com/ad4.jpg"}],
+        "videos": [],
+        "page_like_count": 3420
+      }
+    },
+    {
+      "ad_archive_id": "aaa111005",
+      "page_id": "112233445566",
+      "page_name": "Meridian Homes UK",
+      "is_active": true,
+      "start_date": 1743638400,
+      "end_date": null,
+      "total_active_time": null,
+      "publisher_platform": ["FACEBOOK", "INSTAGRAM"],
+      "snapshot": {
+        "body": {"text": "Meridian Quarter — 1, 2 and 3 bed apartments. Enquire for a brochure and floor plans."},
+        "title": "Download Brochure",
+        "cta_type": "CONTACT_US",
+        "cta_text": "Get In Touch",
+        "link_url": "https://meridian-homes.co.uk/brochure",
+        "display_format": "IMAGE",
+        "images": [{"url": "https://example.com/ad5.jpg"}],
+        "videos": [],
+        "page_like_count": 3420
+      }
+    }
+  ]
+}

@@ -15,8 +15,16 @@ class Settings(BaseSettings):
     # Browserless (managed Chromium)
     browserless_token: str = Field(default="", alias="BROWSERLESS_TOKEN")
 
+    # Adyntel (primary ad intelligence — adyntel.com)
+    adyntel_api_key: str = Field(default="", alias="ADYNTEL_API_KEY")
+    adyntel_email: str = Field(default="", alias="ADYNTEL_EMAIL")
+    # When True and no API key set, collector returns deterministic dummy data
+    # for end-to-end POC testing. Set False in production.
+    adyntel_dummy_mode: bool = Field(default=True, alias="ADYNTEL_DUMMY_MODE")
+
     # Free APIs
     google_pagespeed_api_key: str = Field(default="", alias="GOOGLE_PAGESPEED_API_KEY")
+    # Legacy — kept as fallback only
     meta_ad_library_token: str = Field(default="", alias="META_AD_LIBRARY_TOKEN")
 
     # Runtime

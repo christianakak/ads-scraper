@@ -1,0 +1,54 @@
+{
+  "_scenario": "premium_visionary",
+  "_description": "2 ads, fresh creative (11 days), LEARN_MORE — low fatigue, premium brand",
+  "page_id": "998877665544",
+  "page_name": "Halcyon Residences",
+  "number_of_ads": 2,
+  "unique_landing_pages": ["halcyon-residences.co.uk"],
+  "continuation_token": null,
+  "is_result_complete": true,
+  "results": [
+    {
+      "ad_archive_id": "bbb222001",
+      "page_id": "998877665544",
+      "page_name": "Halcyon Residences",
+      "is_active": true,
+      "start_date": 1779321600,
+      "end_date": null,
+      "total_active_time": null,
+      "publisher_platform": ["FACEBOOK", "INSTAGRAM"],
+      "snapshot": {
+        "body": {"text": "Introducing Halcyon Residences. 12 exceptional apartments designed to the highest specification. Prices from £975,000."},
+        "title": "12 Exceptional Residences",
+        "cta_type": "LEARN_MORE",
+        "cta_text": "Discover More",
+        "link_url": "https://halcyon-residences.co.uk",
+        "display_format": "IMAGE",
+        "images": [{"url": "https://example.com/halcyon1.jpg"}],
+        "videos": [],
+        "page_like_count": 842
+      }
+    },
+    {
+      "ad_archive_id": "bbb222002",
+      "page_id": "998877665544",
+      "page_name": "Halcyon Residences",
+      "is_active": true,
+      "start_date": 1779321600,
+      "end_date": null,
+      "total_active_time": null,
+      "publisher_platform": ["INSTAGRAM"],
+      "snapshot": {
+        "body": {"text": "A rare collection of lateral apartments. Architecture by award-winning studio. Explore the vision."},
+        "title": "A Rare Collection",
+        "cta_type": "LEARN_MORE",
+        "cta_text": "Learn More",
+        "link_url": "https://halcyon-residences.co.uk/vision",
+        "display_format": "IMAGE",
+        "images": [{"url": "https://example.com/halcyon2.jpg"}],
+        "videos": [],
+        "page_like_count": 842
+      }
+    }
+  ]
+}

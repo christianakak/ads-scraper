@@ -1,0 +1,75 @@
+{
+  "_scenario": "recently_stopped",
+  "_description": "3 ads, all inactive — developer paused campaigns 18 days ago (budget or pre-relaunch)",
+  "page_id": "334455667788",
+  "page_name": "Heathfield Developments",
+  "number_of_ads": 3,
+  "unique_landing_pages": ["heathfield-dev.co.uk/enquire"],
+  "continuation_token": null,
+  "is_result_complete": true,
+  "results": [
+    {
+      "ad_archive_id": "ccc333001",
+      "page_id": "334455667788",
+      "page_name": "Heathfield Developments",
+      "is_active": false,
+      "start_date": 1774915200,
+      "end_date": 1778716800,
+      "total_active_time": 5356800,
+      "publisher_platform": ["FACEBOOK", "INSTAGRAM"],
+      "snapshot": {
+        "body": {"text": "New 2 & 3 bedroom homes now available at Heathfield Gardens. Enquire today for your personal viewing."},
+        "title": "Heathfield Gardens",
+        "cta_type": "CONTACT_US",
+        "cta_text": "Enquire Now",
+        "link_url": "https://heathfield-dev.co.uk/enquire",
+        "display_format": "IMAGE",
+        "images": [{"url": "https://example.com/hf1.jpg"}],
+        "videos": [],
+        "page_like_count": 1105
+      }
+    },
+    {
+      "ad_archive_id": "ccc333002",
+      "page_id": "334455667788",
+      "page_name": "Heathfield Developments",
+      "is_active": false,
+      "start_date": 1776124800,
+      "end_date": 1778716800,
+      "total_active_time": 4147200,
+      "publisher_platform": ["FACEBOOK"],
+      "snapshot": {
+        "body": {"text": "Phase 1 — 70% sold. Don't miss Phase 2. Register your interest now at Heathfield Gardens."},
+        "title": "Phase 2 Coming Soon",
+        "cta_type": "SIGN_UP",
+        "cta_text": "Register Interest",
+        "link_url": "https://heathfield-dev.co.uk/register",
+        "display_format": "IMAGE",
+        "images": [{"url": "https://example.com/hf2.jpg"}],
+        "videos": [],
+        "page_like_count": 1105
+      }
+    },
+    {
+      "ad_archive_id": "ccc333003",
+      "page_id": "334455667788",
+      "page_name": "Heathfield Developments",
+      "is_active": false,
+      "start_date": 1778371200,
+      "end_date": 1778716800,
+      "total_active_time": 1555200,
+      "publisher_platform": ["INSTAGRAM"],
+      "snapshot": {
+        "body": {"text": "3 bed family homes with private gardens. Help to Buy available. Find out more."},
+        "title": "Family Homes Available",
+        "cta_type": "LEARN_MORE",
+        "cta_text": "Find Out More",
+        "link_url": "https://heathfield-dev.co.uk/homes",
+        "display_format": "IMAGE",
+        "images": [{"url": "https://example.com/hf3.jpg"}],
+        "videos": [],
+        "page_like_count": 1105
+      }
+    }
+  ]
+}
