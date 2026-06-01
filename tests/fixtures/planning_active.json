@@ -1,0 +1,19 @@
+{
+  "_scenario": "active_project",
+  "recent_planning_apps": [
+    {
+      "reference": "2025/1872/FUL",
+      "address": "Former Industrial Site, Mill Lane, Bristol, BS1 2AB",
+      "description": "Demolition and erection of 124 residential units (Phase 2)",
+      "decision": "APPROVED",
+      "decision_date": "2025-09-03",
+      "unit_count": 124
+    }
+  ],
+  "planning_granted_date": "2025-09-03",
+  "days_since_planning": 270,
+  "estimated_unit_count": 124,
+  "development_stage": "active",
+  "new_geography_flag": false,
+  "planning_authority": "Bristol City Council"
+}

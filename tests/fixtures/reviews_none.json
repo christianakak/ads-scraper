@@ -1,0 +1,13 @@
+{
+  "_scenario": "no_reviews",
+  "review_count": 0,
+  "avg_rating": null,
+  "response_rate": null,
+  "sentiment_keywords": [],
+  "negative_keywords": [],
+  "has_reviews_page": false,
+  "review_platforms": [],
+  "trustpilot_score": null,
+  "google_rating": null,
+  "homeviews_score": null
+}

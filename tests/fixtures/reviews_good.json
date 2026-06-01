@@ -1,0 +1,13 @@
+{
+  "_scenario": "good_reviews",
+  "review_count": 127,
+  "avg_rating": 4.4,
+  "response_rate": 0.78,
+  "sentiment_keywords": ["quality", "helpful", "great finish", "on time"],
+  "negative_keywords": [],
+  "has_reviews_page": true,
+  "review_platforms": ["Google", "Trustpilot"],
+  "trustpilot_score": 4.3,
+  "google_rating": 4.5,
+  "homeviews_score": null
+}

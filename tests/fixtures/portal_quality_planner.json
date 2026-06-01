@@ -1,0 +1,17 @@
+{
+  "_scenario": "data_driven_planner",
+  "portal_listed": false,
+  "rightmove_listed": false,
+  "hemnet_listed": false,
+  "listing_photo_count": 0,
+  "has_floorplan_on_portal": false,
+  "has_virtual_tour_on_portal": false,
+  "listing_quality_score": 0.0,
+  "days_on_market": null,
+  "price_shown": false,
+  "price_text": null,
+  "portal_cta_type": null,
+  "listing_count": 0,
+  "description_length": 0,
+  "portal_names": []
+}

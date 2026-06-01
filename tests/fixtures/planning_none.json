@@ -1,0 +1,10 @@
+{
+  "_scenario": "no_planning_data",
+  "recent_planning_apps": [],
+  "planning_granted_date": null,
+  "days_since_planning": null,
+  "estimated_unit_count": null,
+  "development_stage": "unknown",
+  "new_geography_flag": false,
+  "planning_authority": null
+}

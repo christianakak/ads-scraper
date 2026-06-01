@@ -112,9 +112,18 @@ class DomainAuditor:
         # 4. Analyze
         # ------------------------------------------------------------------
         pain_signals = []
+        icp_result = None
         for analyzer_class in analyzer_classes:
             analyzer = analyzer_class(vertical_config["rules_path"])
             pain_signals.extend(analyzer.analyze(collector_map))
+            # Pick up ICP classification if ICPClassifier ran
+            try:
+                from verticals.proptech.analyzers.icp_classifier import pop_icp_result
+                candidate = pop_icp_result(collector_map)
+                if candidate is not None:
+                    icp_result = candidate
+            except ImportError:
+                pass
 
         # ------------------------------------------------------------------
         # 5. Triage
@@ -138,12 +147,48 @@ class DomainAuditor:
         _severity_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
         pain_signals.sort(key=lambda s: (_severity_order.get(s.severity.value, 9), -s.confidence))
 
+        # Derive recommended modules from top pain signals
+        seen_modules: list = []
+        for sig in pain_signals:
+            if sig.m360_module not in seen_modules:
+                seen_modules.append(sig.m360_module)
+
+        # Tech stack from site scanner
+        tech_stack_data = collector_map.get("site_scanner")
+        tech_stack = None
+        if tech_stack_data and tech_stack_data.success:
+            from core.base.schemas import TechStack
+            ts = tech_stack_data.data.get("tech_stack", {})
+            if ts:
+                tech_stack = TechStack(**{k: v for k, v in ts.items() if k != "raw_wappalyzer"})
+
+        # Email infra from dns collector
+        dns_data = collector_map.get("dns_headers")
+        email_infra = None
+        if dns_data and dns_data.success:
+            from core.base.schemas import EmailInfrastructure
+            email_infra = EmailInfrastructure(
+                has_spf=dns_data.data.get("has_spf", False),
+                has_dkim=dns_data.data.get("has_dkim", False),
+                has_dmarc=dns_data.data.get("has_dmarc", False),
+                email_provider=dns_data.data.get("email_provider"),
+                domain_age_years=dns_data.data.get("domain_age_years"),
+            )
+
         report = AuditReport(
             domain=request.domain,
             geography=request.geography,
             vertical=request.vertical,
             rules_version=rules_version,
+            icp_persona=icp_result.top_persona if icp_result else None,
+            icp_confidence=icp_result.top_confidence if icp_result else None,
+            high_intent=icp_result.high_intent if icp_result else False,
+            high_intent_reason=icp_result.high_intent_reason if icp_result else None,
             pain_signals=pain_signals,
+            recommended_modules=seen_modules[:5],
+            primary_module=seen_modules[0] if seen_modules else None,
+            tech_stack=tech_stack,
+            email_infrastructure=email_infra,
             triage=TriageMeta(
                 review_status=review_status,
                 audit_confidence=round(audit_confidence, 3),

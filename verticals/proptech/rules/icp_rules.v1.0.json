@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0.0",
+  "effective_from": "2026-06-01",
+  "changelog": "Initial ICP classification weights for PropTech vertical",
+  "high_intent_rules": [
+    {"condition": "pre_launch_no_data", "reason": "recent_planning_permission + no_portal_listing"},
+    {"condition": "high_days_on_market", "reason": "stalled_velocity"},
+    {"condition": "critical_ad_fatigue", "reason": "ad_fatigue_45d_plus"},
+    {"condition": "not_portal_listed + has_planning", "reason": "pre_launch_window"}
+  ],
+  "personas": {
+
+    "scale_up_developer": {
+      "description": "Volume developer, multiple active sites, overwhelmed by manual processes",
+      "signals": [
+        {"collector": "site_scanner",    "field": "project_count",              "threshold": {"gte": 3}, "weight": 0.20},
+        {"collector": "ad_intelligence", "field": "ad_count",                   "threshold": {"gte": 3}, "weight": 0.15},
+        {"collector": "ad_intelligence", "field": "creative_age_days",           "threshold": {"gte": 30}, "weight": 0.15},
+        {"collector": "site_scanner",    "field": "cta_type",                   "threshold": {"eq": "enquire"}, "weight": 0.15},
+        {"collector": "site_scanner",    "field": "has_digital_reservation",     "threshold": {"eq": false}, "weight": 0.10},
+        {"collector": "site_scanner",    "field": "has_chat_automation",         "threshold": {"eq": false}, "weight": 0.10},
+        {"collector": "social_review",   "field": "response_rate",              "threshold": {"lte": 0.4}, "weight": 0.15}
+      ]
+    },
+
+    "premium_visionary": {
+      "description": "Boutique/luxury developer, fewer projects, high price points, wants to justify premium",
+      "signals": [
+        {"collector": "site_scanner",    "field": "pricing_transparency",        "threshold": {"eq": "poa"}, "weight": 0.30},
+        {"collector": "site_scanner",    "field": "has_virtual_tour",            "threshold": {"eq": false}, "weight": 0.25},
+        {"collector": "site_scanner",    "field": "has_interactive_floor_plans", "threshold": {"eq": false}, "weight": 0.20},
+        {"collector": "site_scanner",    "field": "mobile_score",               "threshold": {"gte": 75}, "weight": 0.15},
+        {"collector": "portal_quality",  "field": "listing_photo_count",        "threshold": {"gte": 12}, "weight": 0.10}
+      ]
+    },
+
+    "data_driven_planner": {
+      "description": "Growth developer entering new market, pre-launch, risk-averse",
+      "signals": [
+        {"collector": "planning_intel",  "field": "development_stage",           "threshold": {"eq": "pre_launch"}, "weight": 0.40},
+        {"collector": "portal_quality",  "field": "portal_listed",              "threshold": {"eq": false}, "weight": 0.25},
+        {"collector": "ad_intelligence", "field": "has_active_ads",             "threshold": {"eq": false}, "weight": 0.20},
+        {"collector": "planning_intel",  "field": "new_geography_flag",         "threshold": {"eq": true}, "weight": 0.15}
+      ]
+    }
+
+  }
+}

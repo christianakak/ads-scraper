@@ -1,0 +1,19 @@
+{
+  "_scenario": "pre_launch",
+  "recent_planning_apps": [
+    {
+      "reference": "2026/0341/FUL",
+      "address": "Land at Station Road, Newbury, RG14 7HX",
+      "description": "Erection of 48 dwellings with associated infrastructure, landscaping and open space",
+      "decision": "APPROVED",
+      "decision_date": "2026-04-14",
+      "unit_count": 48
+    }
+  ],
+  "planning_granted_date": "2026-04-14",
+  "days_since_planning": 48,
+  "estimated_unit_count": 48,
+  "development_stage": "pre_launch",
+  "new_geography_flag": false,
+  "planning_authority": "West Berkshire Council"
+}

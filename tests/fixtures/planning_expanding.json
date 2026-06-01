@@ -1,0 +1,19 @@
+{
+  "_scenario": "expanding_developer",
+  "recent_planning_apps": [
+    {
+      "reference": "2026/0118/FUL",
+      "address": "Land North of High Street, Sheffield, S1 4PX",
+      "description": "Residential development comprising 72 apartments and 8 townhouses",
+      "decision": "APPROVED",
+      "decision_date": "2026-02-28",
+      "unit_count": 80
+    }
+  ],
+  "planning_granted_date": "2026-02-28",
+  "days_since_planning": 93,
+  "estimated_unit_count": 80,
+  "development_stage": "pre_launch",
+  "new_geography_flag": true,
+  "planning_authority": "Sheffield City Council"
+}

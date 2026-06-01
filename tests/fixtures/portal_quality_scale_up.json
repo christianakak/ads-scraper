@@ -1,0 +1,17 @@
+{
+  "_scenario": "scale_up_developer",
+  "portal_listed": true,
+  "rightmove_listed": true,
+  "hemnet_listed": false,
+  "listing_photo_count": 7,
+  "has_floorplan_on_portal": false,
+  "has_virtual_tour_on_portal": false,
+  "listing_quality_score": 0.42,
+  "days_on_market": 134,
+  "price_shown": true,
+  "price_text": "From £310,000",
+  "portal_cta_type": "enquire",
+  "listing_count": 3,
+  "description_length": 180,
+  "portal_names": ["Rightmove"]
+}

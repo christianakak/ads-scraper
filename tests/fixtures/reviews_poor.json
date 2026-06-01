@@ -1,0 +1,13 @@
+{
+  "_scenario": "poor_reviews",
+  "review_count": 14,
+  "avg_rating": 3.1,
+  "response_rate": 0.14,
+  "sentiment_keywords": ["slow", "communication issues", "delays", "disappointing"],
+  "negative_keywords": ["slow response", "no communication", "delays"],
+  "has_reviews_page": false,
+  "review_platforms": ["Google"],
+  "trustpilot_score": null,
+  "google_rating": 3.1,
+  "homeviews_score": null
+}

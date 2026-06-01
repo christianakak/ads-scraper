@@ -1,0 +1,17 @@
+{
+  "_scenario": "strong_listing",
+  "portal_listed": true,
+  "rightmove_listed": true,
+  "hemnet_listed": false,
+  "listing_photo_count": 22,
+  "has_floorplan_on_portal": true,
+  "has_virtual_tour_on_portal": false,
+  "listing_quality_score": 0.82,
+  "days_on_market": 28,
+  "price_shown": true,
+  "price_text": "From £425,000",
+  "portal_cta_type": "enquire",
+  "listing_count": 2,
+  "description_length": 610,
+  "portal_names": ["Rightmove", "Zoopla"]
+}

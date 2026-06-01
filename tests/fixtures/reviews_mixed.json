@@ -1,0 +1,13 @@
+{
+  "_scenario": "mixed_reviews",
+  "review_count": 43,
+  "avg_rating": 3.8,
+  "response_rate": 0.35,
+  "sentiment_keywords": ["nice homes", "slow response", "build quality good", "communication"],
+  "negative_keywords": ["slow response", "difficult to reach", "after sales"],
+  "has_reviews_page": true,
+  "review_platforms": ["Google", "HomeViews"],
+  "trustpilot_score": null,
+  "google_rating": 3.8,
+  "homeviews_score": 3.6
+}

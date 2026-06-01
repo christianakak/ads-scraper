@@ -1,0 +1,254 @@
+{
+  "schema_version": "1.0.0",
+  "effective_from": "2026-06-01",
+  "changelog": "Initial PropTech pain rule set for UK and Swedish property developers",
+  "rules": {
+
+    "stale_creative": {
+      "collector": "ad_intelligence",
+      "field": "creative_age_days",
+      "threshold": {"gte": 30},
+      "severity": "HIGH",
+      "base_confidence": 0.88,
+      "business_pain": "Ad fatigue driving CPL up, CTR declining",
+      "emotional_trigger": "You're paying for impressions that stopped converting weeks ago",
+      "m360_module": "Lemon",
+      "hook_angle": "velocity",
+      "icp_fit": ["scale_up_developer"]
+    },
+
+    "critical_ad_fatigue": {
+      "collector": "ad_intelligence",
+      "field": "creative_age_days",
+      "threshold": {"gte": 45},
+      "severity": "CRITICAL",
+      "base_confidence": 0.94,
+      "business_pain": "Severe creative fatigue — estimated 40-60% CPL increase vs fresh creative",
+      "emotional_trigger": "Every week this runs, you're paying more per lead than your competitors",
+      "m360_module": "Lemon",
+      "hook_angle": "velocity",
+      "icp_fit": ["scale_up_developer"]
+    },
+
+    "recently_stopped_ads": {
+      "collector": "ad_intelligence",
+      "field": "recently_stopped_ads",
+      "threshold": {"eq": true},
+      "severity": "HIGH",
+      "base_confidence": 0.82,
+      "business_pain": "Advertising paused — likely budget pressure or pre-relaunch gap",
+      "emotional_trigger": "Competitors kept running while your pipeline went quiet",
+      "m360_module": "Lemon",
+      "hook_angle": "velocity",
+      "icp_fit": ["scale_up_developer", "data_driven_planner"]
+    },
+
+    "static_floor_plans": {
+      "collector": "site_scanner",
+      "field": "has_interactive_floor_plans",
+      "threshold": {"eq": false},
+      "severity": "HIGH",
+      "base_confidence": 0.85,
+      "business_pain": "Buyers cannot explore the space — lower reservation confidence",
+      "emotional_trigger": "Static floor plans lose buyers to developers who let them walk the space digitally",
+      "m360_module": "EVE3D",
+      "hook_angle": "premium",
+      "icp_fit": ["premium_visionary", "scale_up_developer"]
+    },
+
+    "no_virtual_tour": {
+      "collector": "site_scanner",
+      "field": "has_virtual_tour",
+      "threshold": {"eq": false},
+      "severity": "HIGH",
+      "base_confidence": 0.87,
+      "business_pain": "Off-plan buyers cannot experience the project — slower reservation velocity",
+      "emotional_trigger": "Buyers are reserving competitor units they can walk through online at 11pm",
+      "m360_module": "EVE3D",
+      "hook_angle": "premium",
+      "icp_fit": ["premium_visionary"]
+    },
+
+    "enquire_cta_no_reservation": {
+      "collector": "site_scanner",
+      "field": "cta_type",
+      "threshold": {"eq": "enquire"},
+      "severity": "CRITICAL",
+      "base_confidence": 0.91,
+      "business_pain": "Every enquiry requires a human response — team bottleneck at volume",
+      "emotional_trigger": "Your sales team is answering the same 6 questions on repeat instead of closing",
+      "m360_module": "Journey",
+      "hook_angle": "velocity",
+      "icp_fit": ["scale_up_developer"]
+    },
+
+    "no_digital_reservation": {
+      "collector": "site_scanner",
+      "field": "has_digital_reservation",
+      "threshold": {"eq": false},
+      "severity": "HIGH",
+      "base_confidence": 0.86,
+      "business_pain": "No digital commitment mechanism — serious buyers have no way to secure off-plan",
+      "emotional_trigger": "Buyers who are ready to commit have nowhere to go at midnight on a Sunday",
+      "m360_module": "Journey",
+      "hook_angle": "velocity",
+      "icp_fit": ["scale_up_developer", "premium_visionary"]
+    },
+
+    "no_chat_automation": {
+      "collector": "site_scanner",
+      "field": "has_chat_automation",
+      "threshold": {"eq": false},
+      "severity": "MEDIUM",
+      "base_confidence": 0.72,
+      "business_pain": "Inbound leads handled manually — response lag kills conversion",
+      "emotional_trigger": "High-intent buyers who don't get a response in under 5 minutes buy elsewhere",
+      "m360_module": "Journey",
+      "hook_angle": "velocity",
+      "icp_fit": ["scale_up_developer"]
+    },
+
+    "poa_pricing": {
+      "collector": "site_scanner",
+      "field": "pricing_transparency",
+      "threshold": {"eq": "poa"},
+      "severity": "HIGH",
+      "base_confidence": 0.83,
+      "business_pain": "Price opacity creates friction — buyers disengage before making contact",
+      "emotional_trigger": "Buyers who won't call for a price are your buyers — they just went to a competitor",
+      "m360_module": "EVE3D",
+      "hook_angle": "premium",
+      "icp_fit": ["premium_visionary"]
+    },
+
+    "slow_site": {
+      "collector": "site_scanner",
+      "field": "load_time_ms",
+      "threshold": {"gte": 3500},
+      "severity": "MEDIUM",
+      "base_confidence": 0.75,
+      "business_pain": "Slow load time killing paid traffic ROI — every ad click bounces faster",
+      "emotional_trigger": "53% of mobile users leave a page that takes over 3 seconds to load",
+      "m360_module": "Lemon",
+      "hook_angle": "velocity",
+      "icp_fit": ["scale_up_developer"]
+    },
+
+    "no_facebook_pixel": {
+      "collector": "site_scanner",
+      "field": "tech_stack.has_facebook_pixel",
+      "threshold": {"eq": false},
+      "severity": "MEDIUM",
+      "base_confidence": 0.78,
+      "business_pain": "No retargeting data — ad spend has zero audience learning",
+      "emotional_trigger": "Every visitor you pay for leaves without being retargetable",
+      "m360_module": "Lemon",
+      "hook_angle": "velocity",
+      "icp_fit": ["scale_up_developer"]
+    },
+
+    "not_portal_listed": {
+      "collector": "portal_quality",
+      "field": "portal_listed",
+      "threshold": {"eq": false},
+      "severity": "CRITICAL",
+      "base_confidence": 0.92,
+      "business_pain": "Not discoverable by 90% of active property buyers",
+      "emotional_trigger": "Buyers are searching Rightmove right now and your project doesn't exist to them",
+      "m360_module": "Newbuilds.com",
+      "hook_angle": "velocity",
+      "icp_fit": ["data_driven_planner", "scale_up_developer"]
+    },
+
+    "low_portal_quality": {
+      "collector": "portal_quality",
+      "field": "listing_quality_score",
+      "threshold": {"lte": 0.45},
+      "severity": "HIGH",
+      "base_confidence": 0.81,
+      "business_pain": "Poor listing quality reducing click-through vs comparable developments",
+      "emotional_trigger": "Buyers scroll past low-quality listings — you're invisible on the portal",
+      "m360_module": "Newbuilds.com",
+      "hook_angle": "velocity",
+      "icp_fit": ["scale_up_developer", "premium_visionary"]
+    },
+
+    "high_days_on_market": {
+      "collector": "portal_quality",
+      "field": "days_on_market",
+      "threshold": {"gte": 90},
+      "severity": "CRITICAL",
+      "base_confidence": 0.90,
+      "business_pain": "Stalled velocity — carrying costs mounting, investor confidence falling",
+      "emotional_trigger": "Every week unsold is money bleeding from the project budget",
+      "m360_module": "Newbuilds.com",
+      "hook_angle": "velocity",
+      "icp_fit": ["scale_up_developer", "data_driven_planner"]
+    },
+
+    "pre_launch_no_data": {
+      "collector": "planning_intel",
+      "field": "development_stage",
+      "threshold": {"eq": "pre_launch"},
+      "severity": "CRITICAL",
+      "base_confidence": 0.88,
+      "business_pain": "Unit mix decided without live demand data — full execution risk",
+      "emotional_trigger": "Building the wrong thing in a new market is a multi-million pound mistake",
+      "m360_module": "Plot.ai",
+      "hook_angle": "certainty",
+      "icp_fit": ["data_driven_planner"]
+    },
+
+    "new_geography_expansion": {
+      "collector": "planning_intel",
+      "field": "new_geography_flag",
+      "threshold": {"eq": true},
+      "severity": "HIGH",
+      "base_confidence": 0.84,
+      "business_pain": "Entering unfamiliar market without local demand intelligence",
+      "emotional_trigger": "New markets have different buyer profiles — gut feel from your existing patch doesn't transfer",
+      "m360_module": "Plot.ai",
+      "hook_angle": "certainty",
+      "icp_fit": ["data_driven_planner"]
+    },
+
+    "poor_reviews": {
+      "collector": "social_review",
+      "field": "avg_rating",
+      "threshold": {"lte": 3.5},
+      "severity": "HIGH",
+      "base_confidence": 0.86,
+      "business_pain": "Poor reputation actively losing buyers who check reviews before reserving",
+      "emotional_trigger": "3 out of 5 buyers read reviews before making contact — yours are costing you leads",
+      "m360_module": "Journey",
+      "hook_angle": "velocity",
+      "icp_fit": ["scale_up_developer"]
+    },
+
+    "low_review_response_rate": {
+      "collector": "social_review",
+      "field": "response_rate",
+      "threshold": {"lte": 0.3},
+      "severity": "MEDIUM",
+      "base_confidence": 0.74,
+      "business_pain": "Unanswered reviews signal an overwhelmed team to prospective buyers",
+      "emotional_trigger": "Buyers see unanswered negative reviews as a preview of how you'll handle their snagging list",
+      "m360_module": "Journey",
+      "hook_angle": "velocity",
+      "icp_fit": ["scale_up_developer"]
+    },
+
+    "stale_content": {
+      "collector": "site_scanner",
+      "field": "content_freshness_days",
+      "threshold": {"gte": 90},
+      "severity": "LOW",
+      "base_confidence": 0.65,
+      "business_pain": "Stale content signals inactivity — hurts SEO and buyer confidence",
+      "emotional_trigger": "A blog last updated 4 months ago tells buyers nobody's home",
+      "m360_module": "Lemon",
+      "hook_angle": "velocity",
+      "icp_fit": ["scale_up_developer"]
+    }
+  }
+}
