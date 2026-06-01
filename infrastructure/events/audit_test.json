@@ -1,0 +1,7 @@
+{
+  "httpMethod": "POST",
+  "path": "/v1/audit",
+  "headers": {"Content-Type": "application/json"},
+  "body": "{\"domain\": \"berkeley-homes.co.uk\", \"geography\": \"uk\", \"vertical\": \"proptech\"}",
+  "isBase64Encoded": false
+}

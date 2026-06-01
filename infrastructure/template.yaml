@@ -1,0 +1,167 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: GTM Intelligence Engine — Lambda + API Gateway
+
+# Deploy: sam build && sam deploy --guided
+# Invoke locally: sam local invoke GTMIntelligenceFunction --event events/audit.json
+
+Globals:
+  Function:
+    Timeout: 60
+    MemorySize: 1024
+    Runtime: python3.12
+    Environment:
+      Variables:
+        ENV: prod
+        ANTHROPIC_API_KEY: !Ref AnthropicApiKey
+        SUPABASE_URL: !Ref SupabaseUrl
+        SUPABASE_SERVICE_KEY: !Ref SupabaseServiceKey
+        ADYNTEL_API_KEY: !Ref AdyntelApiKey
+        ADYNTEL_EMAIL: !Ref AdyntelEmail
+        ADYNTEL_DUMMY_MODE: "False"
+        BROWSERLESS_TOKEN: !Ref BrowserlessToken
+        SITE_SCANNER_DUMMY_MODE: "False"
+        USE_LOCAL_BROWSER: "False"
+        GOOGLE_PAGESPEED_API_KEY: !Ref GooglePagespeedApiKey
+        META_AD_LIBRARY_TOKEN: !Ref MetaAdLibraryToken
+        AUDIT_CACHE_TTL_DAYS: "30"
+        LOG_LEVEL: INFO
+
+Parameters:
+  AnthropicApiKey:
+    Type: String
+    NoEcho: true
+    Description: Anthropic API key for hook generation (sk-ant-...)
+
+  SupabaseUrl:
+    Type: String
+    Description: Supabase project URL (https://xxx.supabase.co)
+
+  SupabaseServiceKey:
+    Type: String
+    NoEcho: true
+    Description: Supabase service role key
+
+  AdyntelApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Adyntel API key for ad intelligence (adyntel.com)
+
+  AdyntelEmail:
+    Type: String
+    Default: ""
+    Description: Email associated with Adyntel account
+
+  BrowserlessToken:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Browserless.io token for managed Chromium
+
+  GooglePagespeedApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Google PageSpeed Insights API key (free, 25k/day)
+
+  MetaAdLibraryToken:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Meta Ad Library access token (legacy fallback)
+
+Resources:
+  GTMIntelligenceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: gtm-intelligence-engine
+      Handler: api.lambda_handler.handler
+      Description: GTM Intelligence Engine — domain audit + hook generation
+      Policies:
+        - AWSLambdaBasicExecutionRole
+      Events:
+        AuditPost:
+          Type: Api
+          Properties:
+            Path: /v1/audit
+            Method: POST
+            RestApiId: !Ref GTMApi
+
+        AuditGet:
+          Type: Api
+          Properties:
+            Path: /v1/audit/{audit_id}
+            Method: GET
+            RestApiId: !Ref GTMApi
+
+        BatchAudit:
+          Type: Api
+          Properties:
+            Path: /v1/audit/batch
+            Method: POST
+            RestApiId: !Ref GTMApi
+
+        OutcomePost:
+          Type: Api
+          Properties:
+            Path: /v1/outcome
+            Method: POST
+            RestApiId: !Ref GTMApi
+
+        OutcomeStats:
+          Type: Api
+          Properties:
+            Path: /v1/outcome/stats
+            Method: GET
+            RestApiId: !Ref GTMApi
+
+        TriageGet:
+          Type: Api
+          Properties:
+            Path: /v1/triage
+            Method: GET
+            RestApiId: !Ref GTMApi
+
+        TriagePatch:
+          Type: Api
+          Properties:
+            Path: /v1/triage/{audit_id}
+            Method: PATCH
+            RestApiId: !Ref GTMApi
+
+        Health:
+          Type: Api
+          Properties:
+            Path: /health
+            Method: GET
+            RestApiId: !Ref GTMApi
+
+  GTMApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: gtm-intelligence-api
+      StageName: v1
+      Cors:
+        AllowMethods: "'GET,POST,PATCH,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+        AllowOrigin: "'*'"
+      # Throttle to protect against Clay misconfiguration hammering the API
+      MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "*"
+          ThrottlingRateLimit: 10
+          ThrottlingBurstLimit: 20
+
+Outputs:
+  ApiEndpoint:
+    Description: GTM Intelligence Engine API endpoint — paste into Clay HTTP Enrichment
+    Value: !Sub "https://${GTMApi}.execute-api.${AWS::Region}.amazonaws.com/v1"
+
+  AuditEndpoint:
+    Description: POST this URL from Clay with {domain, geography}
+    Value: !Sub "https://${GTMApi}.execute-api.${AWS::Region}.amazonaws.com/v1/audit"
+
+  FunctionArn:
+    Description: Lambda function ARN
+    Value: !GetAtt GTMIntelligenceFunction.Arn

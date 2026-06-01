@@ -64,3 +64,5 @@ class HealthResponse(BaseModel):
     status: str = "ok"
     version: str = "0.1.0"
     registered_verticals: list[str] = []
+    store_connected: bool = False
+    hook_generator_ready: bool = False

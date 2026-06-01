@@ -72,6 +72,9 @@ CREATE TABLE IF NOT EXISTS audits (
   email_infrastructure        JSONB DEFAULT '{}',
   raw_collector_output        JSONB DEFAULT '{}',
 
+  -- Full report JSON — enables cache retrieval without re-scraping
+  full_audit_json             JSONB,
+
   -- Cache & provenance
   collected_at                TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at                  TIMESTAMPTZ NOT NULL DEFAULT now(),
