@@ -120,15 +120,19 @@ class SiteScannerCollector(NormalizationMixin, BaseCollector):
         self._browserless_token: str = getattr(settings, "browserless_token", "")
         self._use_local_browser: bool = getattr(settings, "use_local_browser", False)
         self._dummy_mode: bool = getattr(settings, "site_scanner_dummy_mode", True)
-        self._pagespeed_key: str = getattr(settings, "google_pagespeed_api_key", "")
+        self._pagespeed_key: str = (
+            getattr(settings, "google_api_key", "")
+            or getattr(settings, "google_pagespeed_api_key", "")
+        )
 
     async def collect(self, domain: str, geography: str) -> CollectorResult:
         has_browser = bool(self._browserless_token) or self._use_local_browser
+        url = f"https://{domain}"
 
         if has_browser:
             playwright_data, pagespeed_data = await asyncio.gather(
-                self._playwright_scan(f"https://{domain}", geography),
-                self._pagespeed_scan(f"https://{domain}"),
+                self._playwright_scan(url, geography),
+                self._pagespeed_scan(url),
                 return_exceptions=True,
             )
             data = {
@@ -143,13 +147,20 @@ class SiteScannerCollector(NormalizationMixin, BaseCollector):
             )
 
         if self._dummy_mode:
-            return self._load_dummy(domain)
+            # PageSpeed still runs in dummy mode — it's free and needs no browser
+            pagespeed_data = await self._pagespeed_scan(url)
+            dummy = self._load_dummy(domain)
+            if pagespeed_data:
+                dummy.data.update(pagespeed_data)
+            return dummy
 
+        # No browser, no dummy mode — still run PageSpeed
+        pagespeed_data = await self._pagespeed_scan(url)
         return CollectorResult(
             collector_id=self.collector_id,
             domain=domain,
             success=True,
-            data={"_skipped": "no_browser_configured"},
+            data=pagespeed_data or {"_skipped": "no_browser_configured"},
         )
 
     # ------------------------------------------------------------------

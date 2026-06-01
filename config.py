@@ -26,8 +26,11 @@ class Settings(BaseSettings):
     site_scanner_dummy_mode: bool = Field(default=True, alias="SITE_SCANNER_DUMMY_MODE")
     use_local_browser: bool = Field(default=False, alias="USE_LOCAL_BROWSER")
 
-    # Free APIs
+    # Google APIs — one key, enable PageSpeed Insights + Places APIs on same GCP project
+    google_api_key: str = Field(default="", alias="GOOGLE_API_KEY")
+    # Legacy aliases — accepted for backwards compat
     google_pagespeed_api_key: str = Field(default="", alias="GOOGLE_PAGESPEED_API_KEY")
+
     # Legacy — kept as fallback only
     meta_ad_library_token: str = Field(default="", alias="META_AD_LIBRARY_TOKEN")
 

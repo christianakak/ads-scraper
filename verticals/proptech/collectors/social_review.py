@@ -53,7 +53,10 @@ class SocialReviewCollector(NormalizationMixin, BaseCollector):
     def __init__(self, settings: Any) -> None:
         super().__init__(settings)
         self._dummy_mode: bool = getattr(settings, "site_scanner_dummy_mode", True)
-        self._pagespeed_key: str = getattr(settings, "google_pagespeed_api_key", "")
+        self._google_api_key: str = (
+            getattr(settings, "google_api_key", "")
+            or getattr(settings, "google_pagespeed_api_key", "")
+        )
 
     async def collect(self, domain: str, geography: str) -> CollectorResult:
         if not self._dummy_mode:
@@ -79,7 +82,7 @@ class SocialReviewCollector(NormalizationMixin, BaseCollector):
         return _merge_reviews(g, t)
 
     async def _fetch_google_places(self, company: str) -> dict[str, Any]:
-        if not self._pagespeed_key:
+        if not self._google_api_key:
             return {}
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
@@ -89,7 +92,7 @@ class SocialReviewCollector(NormalizationMixin, BaseCollector):
                         "input": company,
                         "inputtype": "textquery",
                         "fields": "place_id,name,rating,user_ratings_total",
-                        "key": self._pagespeed_key,
+                        "key": self._google_api_key,
                     },
                 )
                 data = r.json()
