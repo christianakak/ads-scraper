@@ -32,28 +32,31 @@ gtm-intelligence-engine/
 │
 ├── core/                          # Vertical-agnostic. Zero PropTech knowledge here.
 │   ├── base/
-│   │   ├── collector.py           # BaseCollector ABC
+│   │   ├── collector.py           # BaseCollector ABC + NormalizationMixin
 │   │   ├── analyzer.py            # BaseAnalyzer ABC
 │   │   ├── schemas.py             # Pydantic: CollectorResult, PainSignal, AuditReport
 │   │   └── registry.py            # Maps vertical slug → collectors + rules
 │   ├── engine.py                  # DomainAuditor — parallel async orchestration
-│   └── hook_generator.py          # Claude API, persona-aware prompt builder
+│   ├── hook_generator.py          # Claude API, persona-aware prompt builder
+│   ├── normalizer.py              # NormalizationLayer: currency, dates, CTA enums
+│   └── stealth.py                 # HTTP client with UA rotation, backoff, cookie jar
 │
 ├── verticals/
 │   └── proptech/                  # Add saas/, fintech/ here for new verticals
 │       ├── collectors/
+│       │   ├── dns_headers.py     # Screening layer: DNS, WHOIS, HTTP headers
 │       │   ├── ad_intelligence.py # Meta Ad Library + Google Ads Transparency
-│       │   ├── site_scanner.py    # Playwright: CTA, floor plans, reservation flow
+│       │   ├── site_scanner.py    # Browserless + Wappalyzer + PageSpeed
 │       │   ├── portal_quality.py  # Rightmove (UK) + Hemnet (SE) listing scanner
 │       │   ├── planning_intel.py  # UK Planning Portal + Swedish Lantmäteriet
 │       │   └── social_review.py   # Google Places, Trustpilot, HomeViews
 │       ├── analyzers/
-│       │   ├── pain_mapper.py     # Signal → {pain, emotional_trigger, m360_module}
+│       │   ├── pain_mapper.py     # Signal → {pain, confidence, emotional_trigger, module}
 │       │   ├── icp_classifier.py  # Score signals → Scale-Up / Premium / Planner
 │       │   └── benchmarks.py      # Industry baseline values
 │       └── rules/
-│           ├── pain_rules.json    # Diagnostic logic as config (hot-swappable)
-│           └── icp_rules.json     # ICP classification weights
+│           ├── pain_rules.v1.json # Versioned rules — never overwrite, always increment
+│           └── icp_rules.v1.json  # ICP classification weights
 │
 ├── api/
 │   ├── app.py                     # FastAPI app (local + Lambda via Mangum)
@@ -65,7 +68,7 @@ gtm-intelligence-engine/
 │
 ├── infrastructure/
 │   ├── template.yaml              # AWS SAM (Lambda + API Gateway)
-│   └── supabase_schema.sql        # Table definitions + indexes
+│   └── supabase_schema.sql        # Tables: audits, outcomes, triage_queue + indexes
 │
 └── tests/
     ├── unit/                      # Analyzer/classifier logic, no network calls
@@ -288,14 +291,18 @@ planner_score   ← recent_planning_granted, no_portal_listing, no_ad_activity,
   "high_intent": true,
   "high_intent_reason": "recent_planning_permission + no_portal_listing",
 
+  "rules_version": "1.0.0",
+
   "pain_signals": [
     {
       "signal_id": "stale_creative",
       "severity": "HIGH",
+      "confidence": 0.92,
       "detected_value": { "creative_age_days": 47 },
-      "business_pain": "...",
-      "emotional_trigger": "...",
-      "m360_module": "Lemon"
+      "business_pain": "Ad fatigue driving CPL up, CTR declining",
+      "emotional_trigger": "You're paying for impressions that stopped converting weeks ago",
+      "m360_module": "Lemon",
+      "corroborating_signals": ["high_ad_count", "no_facebook_pixel_conversion_tracking"]
     }
   ],
 
@@ -326,11 +333,18 @@ planner_score   ← recent_planning_granted, no_portal_listing, no_ad_activity,
     "domain_age_years": 3.2
   },
 
+  "triage": {
+    "review_status": "auto_approved",
+    "review_reason": null,
+    "audit_confidence": 0.88
+  },
+
   "cache_meta": {
     "collected_at": "2026-01-01T00:00:00Z",
     "cache_hit": false,
     "collectors_run": ["dns_headers", "ad_intelligence", "site_scanner",
-                       "portal_quality", "planning_intel", "social_review"]
+                       "portal_quality", "planning_intel", "social_review"],
+    "collector_errors": []
   },
 
   "raw_collector_output": {},
@@ -339,7 +353,9 @@ planner_score   ← recent_planning_granted, no_portal_listing, no_ad_activity,
     "icp_persona": "scale_up_developer",
     "icp_confidence": 0.84,
     "high_intent": true,
+    "review_status": "auto_approved",
     "top_pain_signal": "stale_creative",
+    "top_pain_signal_confidence": 0.92,
     "top_pain_severity": "HIGH",
     "primary_module": "Journey",
     "hook_text": "...",
@@ -352,6 +368,7 @@ planner_score   ← recent_planning_granted, no_portal_listing, no_ad_activity,
     "has_facebook_pixel": true,
     "has_google_tag_manager": false,
     "domain_age_years": 3.2,
+    "rules_version": "1.0.0",
     "collected_at": "2026-01-01T00:00:00Z"
   }
 }
@@ -365,6 +382,8 @@ planner_score   ← recent_planning_granted, no_portal_listing, no_ad_activity,
 POST /v1/audit
   Body:     { "domain": "developer.co.uk", "vertical": "proptech", "geography": "uk" }
   Response: Full AuditReport JSON
+  Notes:    Returns cached result if audit exists and collected_at < 30 days ago.
+            Force refresh with ?force=true
 
 GET  /v1/audit/{audit_id}
   Response: Retrieve stored audit from Supabase
@@ -374,13 +393,39 @@ POST /v1/audit/batch
   Response: { "job_id": "uuid", "status": "queued" }
 
 GET  /v1/audit/batch/{job_id}
-  Response: Batch status + results array
+  Response: Batch job status + results array
+
+GET  /v1/triage
+  Query:    ?status=pending_review&vertical=proptech&limit=50
+  Response: Paginated list of audits awaiting manual review
+  Notes:    Used to build a review queue UI or Airtable/Notion view
+
+PATCH /v1/triage/{audit_id}
+  Body:     { "review_status": "approved" | "rejected", "reviewer_note": "..." }
+  Response: Updated audit row
+  Notes:    Approved audits become eligible for Clay sequence pickup
+
+POST /v1/outcome
+  Body:     { "audit_id": "uuid", "outcome": "meeting_booked" | "uninterested" | "no_reply",
+              "notes": "..." }
+  Response: { "outcome_id": "uuid", "recorded": true }
+  Notes:    Feeds the learning loop. Over time, high-converting signal combos
+            get higher weight in ICP classifier and hook generator prompt.
+
+GET  /v1/outcome/stats
+  Query:    ?vertical=proptech&signal=stale_creative
+  Response: Conversion rates per pain signal — powers rule weight tuning
 
 GET  /health
 ```
 
 Collectors run in parallel via `asyncio.gather()`. Target latency: 15–25s.
 Clay HTTP Enrichment timeout: 45s. Lambda timeout: 60s.
+
+**Triage logic:**
+- `audit_confidence >= 0.80` → `auto_approved` → eligible for Clay immediately
+- `0.60 <= audit_confidence < 0.80` → `pending_review` → sits in triage queue
+- `audit_confidence < 0.60` OR conflicting signals → `flagged` → manual review required
 
 ---
 
@@ -417,7 +462,220 @@ Clay HTTP Enrichment timeout: 45s. Lambda timeout: 60s.
 | 5     | Social/Review collector + cache layer (Supabase freshness check)   | Days 11–12|
 | 6     | ICP classifier, pain mapper, benchmark engine, high_intent flag    | Days 13–14|
 | 7     | Hook generator (Claude API) + FastAPI app + Mangum Lambda handler  | Days 15–16|
-| 8     | SAM infra, CLI tool, env config, end-to-end integration test       | Days 17–18|
+| 8     | Outcome Feed endpoint, triage queue, normalization tests           | Days 17–18|
+| 9     | SAM infra, CLI tool, env config, end-to-end integration test       | Days 19–20|
+
+---
+
+## Normalization Layer
+
+Every collector's raw output passes through `NormalizationLayer` before hitting
+the intelligence layer. This ensures the analyzers never see locale-specific formats.
+
+| Field type       | Raw variants                            | Normalized output              |
+|------------------|-----------------------------------------|--------------------------------|
+| Currency         | "£450,000" / "4 500 000 kr" / "€500k"  | `{ amount: 450000, currency: "GBP" }` |
+| Date             | "3rd March 2025" / "2025-03-03" / "03/03/25" | ISO8601 `"2025-03-03"` |
+| CTA type         | "Enquire" / "Förfrågan" / "Ask about"  | `enum: enquire`                |
+| CTA type         | "Reserve" / "Boka" / "Book now"        | `enum: reserve`                |
+| Unit count       | "32 homes" / "32 bostäder" / "32 units"| `integer: 32`                  |
+| Days on market   | "Listed 14 Feb" → today diff           | `integer: 106` (days)          |
+| Rating           | "4.2 / 5" / "8.4 / 10"               | Normalized to 0.0–1.0 float    |
+| Boolean signals  | "Yes" / "Ja" / true / 1               | `bool: true`                   |
+
+The `NormalizationMixin` on `BaseCollector` runs automatically after `collect()`.
+Collectors return raw data; the mixin applies the mapping table before the result
+is passed to analyzers. Vertical-specific mappings live in `rules/normalizer_map.json`.
+
+---
+
+## Stealth & Rate-Limiting Strategy
+
+Browserless.io handles anti-bot for all browser-based requests (Chromium via
+residential IP pool). The following applies to all non-browser HTTP requests.
+
+**HTTP Client (`core/stealth.py`):**
+- User-Agent pool: rotate across 8 realistic browser UA strings (Chrome/Firefox, Win/Mac)
+- `Accept-Language`: set to locale of target geography (en-GB for UK, sv-SE for Sweden)
+- `Referer`: set to the referring site (e.g., Rightmove referrer when scraping Rightmove)
+- Cookie jar: persisted per domain across requests in the same audit session
+- Request timing: randomised 1.5–3.5s delay between sequential requests to the same domain
+- Retry policy: exponential backoff (1s → 2s → 4s → give up) with jitter on 429/503
+- Max retries: 3 per request before marking collector as `partial_failure`
+
+**Rate limits by source:**
+| Source                  | Limit                  | Our strategy              |
+|-------------------------|------------------------|---------------------------|
+| Meta Ad Library API     | ~200 req/hr per token  | Single token sufficient for MVP volume |
+| Google PageSpeed API    | 25,000 req/day         | No issue                  |
+| UK Planning Portal      | Unspecified, be polite | 2s delay, max 5 pages     |
+| Rightmove               | No API, anti-bot       | Browserless + rate limit  |
+| Hemnet                  | No API, stronger bot detection | Browserless essential |
+| Google Places API       | 100 req/day free tier  | Cache results aggressively |
+
+---
+
+## Rule Versioning
+
+Pain rules and ICP rules are versioned files. Never overwrite — always create a
+new version file and update the registry pointer.
+
+```
+verticals/proptech/rules/
+  pain_rules.v1.0.json     ← first release
+  pain_rules.v1.1.json     ← tweaked thresholds based on outcome data
+  pain_rules.v2.0.json     ← new signal added (breaking schema change)
+  icp_rules.v1.0.json
+```
+
+**Rule file header:**
+```json
+{
+  "schema_version": "1.1.0",
+  "effective_from": "2026-02-01",
+  "changelog": "Raised stale_creative threshold from 30d to 21d based on 40-lead outcome study",
+  "rules": { ... }
+}
+```
+
+**Each audit stores `rules_version`** in the output. This means:
+- Historical audits can be re-analysed with a different rule version without re-scraping
+- A/B test: run v1.0 rules on cohort A, v1.1 on cohort B, compare `meeting_booked` rate
+- Roll back a rule change if reply rate drops
+
+---
+
+## Outcome Feed & Learning Loop
+
+```sql
+-- outcomes table (Supabase)
+CREATE TABLE outcomes (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  audit_id     UUID REFERENCES audits(id),
+  outcome      TEXT CHECK (outcome IN ('meeting_booked', 'uninterested', 'no_reply')),
+  recorded_at  TIMESTAMPTZ DEFAULT now(),
+  notes        TEXT
+);
+```
+
+**How the learning loop works:**
+
+1. Outbound sequence runs → outcome recorded via `POST /v1/outcome`
+2. Weekly: `GET /v1/outcome/stats` shows conversion rate per `pain_signal` + `icp_persona` combo
+3. High-converting combos → raise their `weight` in `icp_rules.vX.json`
+4. Hook generator prompt gets a `high_converting_patterns` context block injected
+5. Over time, the system learns that e.g. `stale_creative` + `scale_up_developer`
+   converts at 22% while `no_virtual_tour` + `premium_visionary` converts at 31%
+
+This loop is the compounding moat. The longer it runs, the harder it is to replicate.
+
+---
+
+## Error Handling Policy
+
+| Failure scenario                    | Behaviour                                      |
+|-------------------------------------|------------------------------------------------|
+| Collector HTTP timeout (>30s)       | Mark collector `timed_out`, continue with others |
+| Collector returns empty result      | Mark `no_data`, exclude signals from that source |
+| Browserless connection failure      | Retry once, then mark Site Scanner `partial_failure` |
+| Meta Ad Library rate limit (429)    | Exponential backoff × 3, then `rate_limited`   |
+| Domain DNS not resolving            | Return early: `{ "error": "domain_unreachable" }` |
+| PageSpeed API failure               | Omit speed signals, do not fail whole audit    |
+| All collectors fail                 | Return `{ "error": "audit_failed", "audit_id": "..." }` — stored in Supabase for retry |
+| Partial failure (3+ collectors ok)  | Return audit with `collector_errors` populated. Flag `review_status: pending_review` |
+| Supabase write failure              | Return result in response body; log error; retry write async |
+
+**Rule:** A partial audit is better than no audit. The system never throws a 500
+to the caller if at least 3 collectors returned data. Errors are surfaced in
+`cache_meta.collector_errors[]` and the triage status.
+
+---
+
+## Data Dictionary
+
+Full field-level specification for the `audits` Supabase table and API response.
+
+```sql
+CREATE TABLE audits (
+  -- Identity
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  domain                TEXT NOT NULL,
+  vertical              TEXT NOT NULL DEFAULT 'proptech',
+  geography             TEXT NOT NULL,          -- 'uk' | 'se'
+  rules_version         TEXT NOT NULL,          -- e.g. '1.0.0'
+
+  -- ICP Classification
+  icp_persona           TEXT,   -- 'scale_up_developer' | 'premium_visionary' | 'data_driven_planner'
+  icp_confidence        FLOAT,  -- 0.0–1.0
+
+  -- Intent
+  high_intent           BOOL DEFAULT FALSE,
+  high_intent_reason    TEXT,
+
+  -- Top pain signal (extracted for fast Clay queries)
+  top_pain_signal       TEXT,   -- signal_id of highest-severity pain
+  top_pain_severity     TEXT,   -- 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
+  top_pain_confidence   FLOAT,
+
+  -- Recommended action
+  primary_module        TEXT,   -- 'Journey' | 'EVE3D' | 'Lemon' | 'Plot.ai' | 'Newbuilds.com'
+  recommended_modules   TEXT[], -- ordered array
+
+  -- Outbound copy
+  hook_text             TEXT,
+  subject_line          TEXT,
+  follow_up_angle       TEXT,
+
+  -- Key signals (extracted for filtering without JSON parsing)
+  ad_creative_age_days  INT,
+  has_digital_reservation BOOL,
+  has_virtual_tour      BOOL,
+  has_interactive_floor_plans BOOL,
+  cta_type              TEXT,   -- 'enquire' | 'reserve' | 'call' | 'other'
+  load_time_ms          INT,
+  mobile_score          INT,    -- 0–100
+  project_count         INT,
+  crm_detected          TEXT,
+  has_facebook_pixel    BOOL,
+  has_google_tag_manager BOOL,
+  analytics_platform    TEXT,
+  domain_age_years      FLOAT,
+  has_spf               BOOL,
+  has_dkim              BOOL,
+  has_dmarc             BOOL,
+  days_on_market        INT,
+  listing_quality_score FLOAT,
+  avg_review_rating     FLOAT,
+  review_count          INT,
+  planning_granted_date DATE,
+  development_stage     TEXT,   -- 'pre_launch' | 'active' | 'sold_out'
+
+  -- Triage
+  review_status         TEXT DEFAULT 'pending_review',
+                        -- 'auto_approved' | 'pending_review' | 'flagged' | 'approved' | 'rejected'
+  review_note           TEXT,
+  audit_confidence      FLOAT,  -- overall audit confidence (avg of signal confidences)
+
+  -- Full JSON (for re-analysis without re-scraping)
+  pain_signals          JSONB,  -- array of PainSignal objects
+  tech_stack            JSONB,
+  email_infrastructure  JSONB,
+  raw_collector_output  JSONB,
+
+  -- Cache & provenance
+  collected_at          TIMESTAMPTZ DEFAULT now(),
+  updated_at            TIMESTAMPTZ DEFAULT now(),
+  collector_errors      JSONB DEFAULT '[]',
+
+  UNIQUE (domain, vertical)
+);
+
+CREATE INDEX idx_audits_domain       ON audits(domain);
+CREATE INDEX idx_audits_review_status ON audits(review_status);
+CREATE INDEX idx_audits_high_intent  ON audits(high_intent) WHERE high_intent = TRUE;
+CREATE INDEX idx_audits_icp_persona  ON audits(icp_persona);
+CREATE INDEX idx_audits_collected_at ON audits(collected_at);
+```
 
 ---
 
@@ -425,7 +683,8 @@ Clay HTTP Enrichment timeout: 45s. Lambda timeout: 60s.
 
 Adding a new vertical requires only:
 1. A new folder under `verticals/` with its own collectors + rules
-2. A `pain_rules.json` and `icp_rules.json` for that vertical
-3. Registration in the global `Registry`
+2. `pain_rules.v1.0.json` and `icp_rules.v1.0.json` for that vertical
+3. A `normalizer_map.json` for locale-specific field normalisation
+4. Registration in the global `Registry`
 
-Zero changes to core engine, API, or hook generator.
+Zero changes to core engine, API, hook generator, or Supabase schema.
