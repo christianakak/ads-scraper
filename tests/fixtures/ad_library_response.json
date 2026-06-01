@@ -1,0 +1,44 @@
+{
+  "data": [
+    {
+      "ad_delivery_start_time": "2026-04-12T00:00:00+0000",
+      "ad_delivery_stop_time": null,
+      "ad_creative_bodies": [
+        "Reserve your dream home today. Only 4 plots remaining at Riverside Quarter. Prices from £425,000. Reserve now and secure your place.",
+        "Don't miss out. Reserve your plot at Riverside Quarter before they're gone."
+      ],
+      "ad_snapshot_url": "https://www.facebook.com/ads/archive/render_ad/?id=123456789",
+      "page_name": "Riverside Homes",
+      "page_id": "123456789",
+      "spend": {"lower_bound": "500", "upper_bound": "999"},
+      "impressions": {"lower_bound": "10000", "upper_bound": "49999"}
+    },
+    {
+      "ad_delivery_start_time": "2026-03-01T00:00:00+0000",
+      "ad_delivery_stop_time": null,
+      "ad_creative_bodies": [
+        "Enquire about our luxury 2 & 3 bed apartments. Contact us today for more information on availability and pricing."
+      ],
+      "ad_snapshot_url": "https://www.facebook.com/ads/archive/render_ad/?id=987654321",
+      "page_name": "Riverside Homes",
+      "page_id": "123456789",
+      "spend": {"lower_bound": "500", "upper_bound": "999"},
+      "impressions": {"lower_bound": "10000", "upper_bound": "49999"}
+    },
+    {
+      "ad_delivery_start_time": "2026-04-20T00:00:00+0000",
+      "ad_delivery_stop_time": null,
+      "ad_creative_bodies": [
+        "Discover Riverside Quarter. 1, 2 and 3 bedroom apartments in the heart of the city. Find out more."
+      ],
+      "ad_snapshot_url": "https://www.facebook.com/ads/archive/render_ad/?id=111111111",
+      "page_name": "Riverside Homes",
+      "page_id": "123456789",
+      "spend": {"lower_bound": "100", "upper_bound": "499"},
+      "impressions": {"lower_bound": "1000", "upper_bound": "9999"}
+    }
+  ],
+  "paging": {
+    "cursors": {"before": "xxx", "after": "yyy"}
+  }
+}
