@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Lint + Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Unit tests
+        run: PYTHONPATH=. pytest tests/unit/ -v
+        env:
+          # Dummy modes on — no real API keys needed in CI
+          ADYNTEL_DUMMY_MODE: "True"
+          SITE_SCANNER_DUMMY_MODE: "True"
+          ANTHROPIC_API_KEY: ""
+          SUPABASE_URL: ""
+          SUPABASE_SERVICE_KEY: ""
