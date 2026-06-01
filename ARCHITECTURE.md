@@ -10,17 +10,18 @@ cold outreach hook → feeds directly into Clay/CRM sequences.
 
 ## Locked Decisions
 
-| Concern            | Decision                                     |
-|--------------------|----------------------------------------------|
-| Deployment         | AWS Lambda + API Gateway                     |
-| Storage            | Supabase (Postgres + REST API)               |
-| Hook generation    | Claude API (Sonnet)                          |
-| Data sources       | Free/open initially (no paid APIs)           |
-| Geography          | UK + Sweden                                  |
-| Collectors         | All 5 (full build)                           |
-| Interface          | Clean REST API — Clay, CLI, and standalone   |
-| Initial vertical   | PropTech (registry-extensible)               |
-| ICP                | Norwegian property developers                |
+| Concern            | Decision                                                    |
+|--------------------|-------------------------------------------------------------|
+| Deployment         | AWS Lambda + API Gateway                                    |
+| Browser automation | Browserless.io (managed Chromium API, not Lambda-hosted)    |
+| Storage            | Supabase (Postgres + JSONB + extracted typed columns)       |
+| Hook generation    | Claude API (Sonnet)                                         |
+| Data sources       | Free/open initially (no paid APIs)                          |
+| Geography          | UK + Sweden                                                 |
+| Collectors         | 6 collectors (DNS/Headers screening layer added)            |
+| Interface          | Clean REST API — Clay, CLI, and standalone                  |
+| Initial vertical   | PropTech (registry-extensible)                              |
+| ICP                | Norwegian property developers                               |
 
 ---
 
@@ -74,7 +75,30 @@ gtm-intelligence-engine/
 
 ---
 
-## The 5 Collectors
+## The 6 Collectors
+
+Collectors run in two phases:
+- **Phase 0 — Screening** (DNS/Headers, ~1s): Confirms domain is active before
+  firing expensive browser collectors. Acts as a waterfall gate.
+- **Phase 1 — Full Audit** (remaining 5 in parallel via `asyncio.gather`, ~15–25s):
+  Only fires if screening passes. Browser work routed through Browserless.io.
+
+---
+
+### 0. DNS / Headers Collector (Screening Layer)
+**Source:** Direct DNS lookups + `httpx` HTTP headers. Zero browser dependency.
+
+| Signal                  | Detection method                        | Pain trigger                      |
+|-------------------------|-----------------------------------------|-----------------------------------|
+| `domain_age_years`      | WHOIS `creation_date`                   | <2yr = new company signal         |
+| `hosting_provider`      | NS records + IP ASN lookup              | Shared hosting = low maturity     |
+| `email_provider`        | MX records                              | Unknown = not doing CRM sequences |
+| `has_spf_dkim_dmarc`    | TXT record lookup                       | Missing = no email marketing      |
+| `redirect_chain_length` | Follow HTTP redirects, count hops       | >2 = technical debt               |
+| `has_ssl`               | SSL cert presence + expiry              | Expired = neglected site          |
+| `cdn_provider`          | `CF-Ray`, `X-Amz-Cf-Id` response headers | Cloudflare = some sophistication |
+
+---
 
 ### 1. Ad Intelligence Collector
 **Sources:** Meta Ad Library (free API), Google Ads Transparency Center (scraped)
@@ -93,7 +117,7 @@ gtm-intelligence-engine/
 ---
 
 ### 2. Site Scanner Collector
-**Sources:** Playwright (headless Chromium), Google PageSpeed Insights API (free)
+**Sources:** Browserless.io (managed Chromium), Playwright SDK, Google PageSpeed Insights API (free), Wappalyzer (OSS tech detection library)
 
 | Signal                        | Detection method                                           | Pain trigger          |
 |-------------------------------|------------------------------------------------------------|-----------------------|
@@ -101,11 +125,20 @@ gtm-intelligence-engine/
 | `has_virtual_tour`            | URL patterns, Matterport embeds, `<iframe src="*matter*">`| Missing → EVE3D       |
 | `has_digital_reservation`     | URL scan: /reserve, /book, payment form fields            | Missing → Journey     |
 | `cta_type`                    | Primary CTA text classification: enquire vs reserve       | Friction → Journey    |
-| `has_chat_automation`         | Script tag: Intercom, Drift, HubSpot, Tidio, Crisp        | Missing = overwhelm   |
+| `has_chat_automation`         | Wappalyzer: Intercom, Drift, Tidio, Crisp, HubSpot chat   | Missing = overwhelm   |
 | `pricing_transparency`        | "Price on application" vs actual price shown              | POA = confidence gap  |
 | `load_time_ms`                | PageSpeed `first_contentful_paint`                        | >3000ms → conversion  |
 | `mobile_score`                | PageSpeed mobile score                                    | <70 = tech debt       |
 | `project_count`               | Count project cards on site                               | 3+ = Scale-Up signal  |
+| `crm_detected`                | Wappalyzer: HubSpot, Salesforce, Marketo, ActiveCampaign  | Fragmented stack pain |
+| `has_facebook_pixel`          | Wappalyzer + script tag scan                              | No pixel = blind spend|
+| `has_google_tag_manager`      | Wappalyzer                                                | Missing = not tracking|
+| `analytics_platform`          | Wappalyzer: GA4, UA, Plausible, etc.                     | UA = legacy = debt    |
+| `has_cookie_consent`          | Wappalyzer: OneTrust, Cookiebot, CookieYes                | Missing = non-compliant (UK/SE GDPR) |
+| `content_freshness_days`      | Parse blog/news section, last post date                   | >90 days = neglected  |
+| `tech_stack`                  | Full Wappalyzer result                                    | Stack sophistication  |
+
+**Note:** Browser work routed to Browserless.io. Lambda connects via `playwright.chromium.connect_over_cdp()`. Eliminates cold-start and Chromium size issues on Lambda.
 
 **Emotional trigger:** Premium Visionary's quiet humiliation.
 
@@ -252,6 +285,9 @@ planner_score   ← recent_planning_granted, no_portal_listing, no_ad_activity,
   "icp_persona": "scale_up_developer",
   "icp_confidence": 0.84,
 
+  "high_intent": true,
+  "high_intent_reason": "recent_planning_permission + no_portal_listing",
+
   "pain_signals": [
     {
       "signal_id": "stale_creative",
@@ -272,11 +308,37 @@ planner_score   ← recent_planning_granted, no_portal_listing, no_ad_activity,
     "follow_up_angle": "..."
   },
 
+  "tech_stack": {
+    "crm": "HubSpot",
+    "analytics": "GA4",
+    "has_facebook_pixel": true,
+    "has_google_tag_manager": false,
+    "has_cookie_consent": true,
+    "hosting": "Cloudflare + Vercel",
+    "raw_wappalyzer": {}
+  },
+
+  "email_infrastructure": {
+    "has_spf": true,
+    "has_dkim": false,
+    "has_dmarc": false,
+    "email_provider": "Google Workspace",
+    "domain_age_years": 3.2
+  },
+
+  "cache_meta": {
+    "collected_at": "2026-01-01T00:00:00Z",
+    "cache_hit": false,
+    "collectors_run": ["dns_headers", "ad_intelligence", "site_scanner",
+                       "portal_quality", "planning_intel", "social_review"]
+  },
+
   "raw_collector_output": {},
 
   "clay_flat": {
     "icp_persona": "scale_up_developer",
     "icp_confidence": 0.84,
+    "high_intent": true,
     "top_pain_signal": "stale_creative",
     "top_pain_severity": "HIGH",
     "primary_module": "Journey",
@@ -285,7 +347,12 @@ planner_score   ← recent_planning_granted, no_portal_listing, no_ad_activity,
     "ad_creative_age_days": 47,
     "has_digital_reservation": false,
     "has_virtual_tour": false,
-    "cta_type": "enquire"
+    "cta_type": "enquire",
+    "crm_detected": "HubSpot",
+    "has_facebook_pixel": true,
+    "has_google_tag_manager": false,
+    "domain_age_years": 3.2,
+    "collected_at": "2026-01-01T00:00:00Z"
   }
 }
 ```
@@ -341,14 +408,16 @@ Clay HTTP Enrichment timeout: 45s. Lambda timeout: 60s.
 
 ## Build Sequence
 
-| Phase | Scope                                              | Target |
-|-------|----------------------------------------------------|--------|
-| 1     | Core abstractions, schemas, registry, Supabase SQL | Days 1–2 |
-| 2     | Site Scanner + Ad Intelligence collectors          | Days 3–5 |
-| 3     | Portal Quality + Planning Intel + Review collectors| Days 6–9 |
-| 4     | ICP classifier, pain mapper, benchmark engine      | Days 10–12 |
-| 5     | Hook generator (Claude API) + FastAPI + Lambda     | Days 13–15 |
-| 6     | SAM infra, Supabase deploy, CLI tool, env config   | Days 16–17 |
+| Phase | Scope                                                              | Target    |
+|-------|--------------------------------------------------------------------|-----------|
+| 1     | Core abstractions, Pydantic schemas, registry, Supabase SQL        | Days 1–2  |
+| 2     | DNS/Headers collector + Ad Intelligence collector                  | Days 3–4  |
+| 3     | Site Scanner (Browserless + Wappalyzer) + PageSpeed integration    | Days 5–7  |
+| 4     | Portal Quality (Rightmove/Hemnet) + Planning Intel collectors      | Days 8–10 |
+| 5     | Social/Review collector + cache layer (Supabase freshness check)   | Days 11–12|
+| 6     | ICP classifier, pain mapper, benchmark engine, high_intent flag    | Days 13–14|
+| 7     | Hook generator (Claude API) + FastAPI app + Mangum Lambda handler  | Days 15–16|
+| 8     | SAM infra, CLI tool, env config, end-to-end integration test       | Days 17–18|
 
 ---
 
