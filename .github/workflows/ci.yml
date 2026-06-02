@@ -20,7 +20,10 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -e ".[dev]"
+        run: |
+          pip install -e ".[dev]"
+          # Playwright Python package installs fine; browser binaries not needed for unit tests
+          # (all browser-dependent collectors are mocked with dummy data in CI)
 
       - name: Lint
         run: ruff check .
