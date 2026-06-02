@@ -303,26 +303,24 @@ class SiteScannerCollector(NormalizationMixin, BaseCollector):
             params["key"] = self._pagespeed_key
 
         try:
-            async with httpx.AsyncClient(timeout=20.0) as client:
-                response = await client.get(_PAGESPEED_BASE, params=params)
-                data = response.json()
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                # Mobile
+                resp_mobile = await client.get(_PAGESPEED_BASE, params=params)
+                mobile_data = resp_mobile.json()
+                # Desktop
+                params["strategy"] = "desktop"
+                resp_desktop = await client.get(_PAGESPEED_BASE, params=params)
+                desktop_data = resp_desktop.json()
 
-            categories = data.get("lighthouseResult", {}).get("categories", {})
-            audits = data.get("lighthouseResult", {}).get("audits", {})
+            def _score(d: dict) -> int:
+                return int((d.get("lighthouseResult", {}).get("categories", {})
+                            .get("performance", {}).get("score") or 0) * 100)
 
-            mobile_score = int((categories.get("performance", {}).get("score") or 0) * 100)
+            mobile_score = _score(mobile_data)
+            desktop_score = _score(desktop_data)
             fcp_ms = int(
-                audits.get("first-contentful-paint", {}).get("numericValue") or 0
-            )
-
-            # Fetch desktop score separately
-            params["strategy"] = "desktop"
-            resp2 = await client.get(_PAGESPEED_BASE, params=params)
-            desktop_score = int(
-                (resp2.json().get("lighthouseResult", {})
-                 .get("categories", {})
-                 .get("performance", {})
-                 .get("score") or 0) * 100
+                mobile_data.get("lighthouseResult", {}).get("audits", {})
+                .get("first-contentful-paint", {}).get("numericValue") or 0
             )
         except Exception:
             return {}

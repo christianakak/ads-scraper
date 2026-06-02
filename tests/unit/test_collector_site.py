@@ -227,11 +227,15 @@ class TestSiteScannerDummyMode:
         assert len(cta_types) > 1
 
     @pytest.mark.asyncio
-    async def test_no_browser_no_dummy_skips(self, settings_no_browser):
+    async def test_no_browser_no_dummy_returns_pagespeed_or_skipped(self, settings_no_browser):
+        # Without a browser token, PageSpeed still runs (free, no browser needed).
+        # Result is either real PageSpeed data or empty — never a full site scan.
         collector = SiteScannerCollector(settings_no_browser)
         result = await collector.collect("example.co.uk", "uk")
         assert result.success is True
-        assert result.data.get("_skipped") == "no_browser_configured"
+        # Should NOT have browser-only signals
+        assert result.data.get("has_digital_reservation") is None
+        assert result.data.get("has_virtual_tour") is None
 
     @pytest.mark.asyncio
     async def test_swedish_domain_works(self, settings_dummy):
