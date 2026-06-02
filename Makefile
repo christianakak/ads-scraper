@@ -11,8 +11,8 @@ lint:
 
 # Run the API locally (hot-reload)
 local:
-	PYTHONPATH=. uvicorn api.app:app --reload --port 8000
+	PYTHONPATH=. python3 -m uvicorn api.app:app --reload --port 8000
 
 # Quick CLI smoke test against a real domain (dummy modes on by default)
 smoke:
-	PYTHONPATH=. python3 -m cli.audit run barratthomes.co.uk --geography uk --pretty
+	PYTHONPATH=. python3 -m cli.audit scan barratthomes.co.uk --geography uk
