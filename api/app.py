@@ -135,6 +135,101 @@ async def run_audit(request: AuditRequestModel):
     return report
 
 
+@app.post("/v1/audit/batch", tags=["audit"])
+async def batch_audit(request: BatchAuditRequestModel):
+    """Queue a batch audit job. Returns job_id for status polling."""
+    raise HTTPException(status_code=501, detail="Batch audit not yet implemented — use CLI: audit batch domains.csv")
+
+
+def _sse(data: dict) -> str:
+    return f"data: {json.dumps(data)}\n\n"
+
+
+@app.get("/v1/audit/stream", include_in_schema=False)
+async def stream_audit(
+    domain: str = Query(...),
+    geography: str = Query(default="uk"),
+    force_refresh: bool = Query(default=False),
+):
+    """SSE stream for the terminal UI. Not for Clay — use POST /v1/audit."""
+    if _auditor is None:
+        raise HTTPException(status_code=503, detail="Engine not initialised")
+
+    domain = domain.removeprefix("https://").removeprefix("http://").rstrip("/").lower()
+
+    queue: asyncio.Queue = asyncio.Queue()
+    t0 = time.monotonic()
+
+    def on_collector_done(result) -> None:
+        elapsed = round(time.monotonic() - t0, 1)
+        queue.put_nowait({
+            "type": "collector_done",
+            "collector_id": result.collector_id,
+            "data_source": result.data_source,
+            "elapsed": elapsed,
+            "data": result.data,
+        })
+
+    async def event_stream():
+        yield _sse({"type": "start", "domain": domain, "geography": geography})
+
+        req = AuditRequest(
+            domain=domain,
+            vertical=Vertical.PROPTECH,
+            geography=Geography(geography),
+            force_refresh=force_refresh,
+        )
+
+        from core.engine import DomainAuditor as _DA
+        auditor = _DA(settings, store=_store, on_collector_done=on_collector_done)
+        audit_task = asyncio.create_task(auditor.audit(req))
+
+        while not audit_task.done() or not queue.empty():
+            try:
+                event = await asyncio.wait_for(queue.get(), timeout=0.8)
+                yield _sse(event)
+            except TimeoutError:
+                yield ": ping\n\n"
+
+        report = await audit_task
+
+        yield _sse({
+            "type": "analysis_done",
+            "signals": [s.model_dump(mode="json") for s in report.pain_signals],
+            "icp_persona": report.icp_persona.value if report.icp_persona else "unknown",
+            "icp_confidence": report.icp_confidence or 0,
+            "triage": report.triage.review_status.value if report.triage else "pending_review",
+        })
+
+        if _hook_gen and report.pain_signals and not report.outbound:
+            yield _sse({"type": "generating_hook"})
+            try:
+                report.outbound = await _hook_gen.generate(report)
+            except Exception:
+                pass
+
+        if report.outbound:
+            yield _sse({
+                "type": "hook",
+                "subject_line": report.outbound.subject_line,
+                "hook_text": report.outbound.hook_text,
+                "follow_up_angle": report.outbound.follow_up_angle,
+            })
+
+        report.clay_flat = _build_clay_flat(report)
+        if _store:
+            try:
+                await _store.upsert_audit(report)
+            except Exception:
+                pass
+
+        yield _sse({"type": "data_quality", "data_quality": report.cache_meta.data_quality if report.cache_meta else {}})
+        yield _sse({"type": "complete", "audit_id": report.audit_id})
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
 @app.get("/v1/audit/{audit_id}", tags=["audit"])
 async def get_audit(audit_id: str):
     """Retrieve a stored audit by ID."""
@@ -144,12 +239,6 @@ async def get_audit(audit_id: str):
     if report is None:
         raise HTTPException(status_code=404, detail="Audit not found")
     return report
-
-
-@app.post("/v1/audit/batch", tags=["audit"])
-async def batch_audit(request: BatchAuditRequestModel):
-    """Queue a batch audit job. Returns job_id for status polling."""
-    raise HTTPException(status_code=501, detail="Batch audit not yet implemented — use CLI: audit batch domains.csv")
 
 
 # ---------------------------------------------------------------------------
@@ -223,7 +312,7 @@ async def update_triage(audit_id: str, request: TriageUpdateModel):
 
 
 # ---------------------------------------------------------------------------
-# Terminal UI
+# Terminal UI + SSE stream  (must be before /v1/audit/{audit_id} wildcard)
 # ---------------------------------------------------------------------------
 
 @app.get("/ui", response_class=HTMLResponse, include_in_schema=False)
@@ -231,111 +320,6 @@ async def ui():
     """Browser-based terminal UI. Clay still uses POST /v1/audit as normal."""
     from .ui import HTML
     return HTML
-
-
-@app.get("/v1/audit/stream", tags=["audit"], include_in_schema=False)
-async def stream_audit(
-    domain: str = Query(...),
-    geography: str = Query(default="uk"),
-    force_refresh: bool = Query(default=False),
-):
-    """
-    SSE stream powering the terminal UI. Emits collector events in real time.
-    Not intended for Clay — use POST /v1/audit for that.
-    """
-    if _auditor is None:
-        raise HTTPException(status_code=503, detail="Engine not initialised")
-
-    domain = domain.removeprefix("https://").removeprefix("http://").rstrip("/").lower()
-
-    queue: asyncio.Queue = asyncio.Queue()
-    t0 = time.monotonic()
-
-    def on_collector_done(result) -> None:
-        elapsed = round(time.monotonic() - t0, 1)
-        queue.put_nowait({
-            "type": "collector_done",
-            "collector_id": result.collector_id,
-            "data_source": result.data_source,
-            "elapsed": elapsed,
-            "data": result.data,
-        })
-
-    async def event_stream():
-        yield _sse({"type": "start", "domain": domain, "geography": geography})
-
-        req = AuditRequest(
-            domain=domain,
-            vertical=Vertical.PROPTECH,
-            geography=Geography(geography),
-            force_refresh=force_refresh,
-        )
-
-        # Build a one-shot auditor with the callback
-        from core.engine import DomainAuditor as _DA
-        auditor = _DA(settings, store=_store, on_collector_done=on_collector_done)
-        audit_task = asyncio.create_task(auditor.audit(req))
-
-        # Drain collector events until audit completes
-        pending = 6
-        while not audit_task.done() or not queue.empty():
-            try:
-                event = await asyncio.wait_for(queue.get(), timeout=0.8)
-                yield _sse(event)
-                pending -= 1
-            except TimeoutError:
-                yield ": ping\n\n"  # keep-alive
-
-        report = await audit_task
-
-        # Signals + ICP
-        yield _sse({
-            "type": "analysis_done",
-            "signals": [s.model_dump(mode="json") for s in report.pain_signals],
-            "icp_persona": report.icp_persona.value if report.icp_persona else "unknown",
-            "icp_confidence": report.icp_confidence or 0,
-            "triage": report.triage.review_status.value if report.triage else "pending_review",
-        })
-
-        # Hook generation
-        if _hook_gen and report.pain_signals and not report.outbound:
-            yield _sse({"type": "generating_hook"})
-            try:
-                report.outbound = await _hook_gen.generate(report)
-            except Exception:
-                pass
-
-        if report.outbound:
-            yield _sse({
-                "type": "hook",
-                "subject_line": report.outbound.subject_line,
-                "hook_text": report.outbound.hook_text,
-                "follow_up_angle": report.outbound.follow_up_angle,
-            })
-
-        # Clay flat + persist
-        report.clay_flat = _build_clay_flat(report)
-        if _store:
-            try:
-                await _store.upsert_audit(report)
-            except Exception:
-                pass
-
-        yield _sse({
-            "type": "data_quality",
-            "data_quality": report.cache_meta.data_quality if report.cache_meta else {},
-        })
-        yield _sse({"type": "complete", "audit_id": report.audit_id})
-
-    return StreamingResponse(
-        event_stream(),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
-
-
-def _sse(data: dict) -> str:
-    return f"data: {json.dumps(data)}\n\n"
 
 
 # ---------------------------------------------------------------------------
