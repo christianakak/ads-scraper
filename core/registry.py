@@ -7,11 +7,11 @@ startup. Adding a new vertical (SaaS, FinTech) requires zero changes here.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .base.collector import BaseCollector
     from .base.analyzer import BaseAnalyzer
+    from .base.collector import BaseCollector
 
 
 class VerticalRegistry:
@@ -21,8 +21,8 @@ class VerticalRegistry:
     def register(
         cls,
         vertical: str,
-        collectors: list[Type["BaseCollector"]],
-        analyzers: list[Type["BaseAnalyzer"]],
+        collectors: list[type[BaseCollector]],
+        analyzers: list[type[BaseAnalyzer]],
         rules_path: str,
         rules_version: str = "1.0.0",
     ) -> None:

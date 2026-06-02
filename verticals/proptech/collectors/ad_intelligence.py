@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -142,7 +142,7 @@ class AdIntelligenceCollector(NormalizationMixin, BaseCollector):
 
 def _compute_signals(raw: dict[str, Any]) -> dict[str, Any]:
     results: list[dict[str, Any]] = raw.get("results", [])
-    now = datetime.now(tz=timezone.utc)
+    now = datetime.now(tz=UTC)
 
     active_ads = [r for r in results if r.get("is_active")]
     inactive_ads = [r for r in results if not r.get("is_active")]
@@ -155,7 +155,7 @@ def _compute_signals(raw: dict[str, Any]) -> dict[str, Any]:
         if ts and (oldest_ts is None or ts < oldest_ts):
             oldest_ts = ts
     if oldest_ts:
-        start_dt = datetime.fromtimestamp(oldest_ts, tz=timezone.utc)
+        start_dt = datetime.fromtimestamp(oldest_ts, tz=UTC)
         creative_age_days = (now - start_dt).days
 
     # Recently stopped: had ads but all are now inactive
@@ -166,7 +166,7 @@ def _compute_signals(raw: dict[str, Any]) -> dict[str, Any]:
             (ad.get("end_date") or 0) for ad in inactive_ads if ad.get("end_date")
         )
         if latest_end:
-            end_dt = datetime.fromtimestamp(latest_end, tz=timezone.utc)
+            end_dt = datetime.fromtimestamp(latest_end, tz=UTC)
             days_since_stopped = (now - end_dt).days
 
     # CTA classification — use the explicit enum, fall back to copy parsing

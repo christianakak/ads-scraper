@@ -9,11 +9,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from verticals.proptech.collectors.ad_intelligence import (
+    _CTA_TYPE_MAP,
     AdIntelligenceCollector,
     _classify_from_copy,
     _compute_signals,
     _fatigue_score,
-    _CTA_TYPE_MAP,
 )
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"

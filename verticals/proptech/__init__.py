@@ -11,14 +11,14 @@ Analyzers run synchronously after collection:
 """
 
 from core.registry import VerticalRegistry
-from verticals.proptech.collectors.dns_headers import DnsHeadersCollector
-from verticals.proptech.collectors.ad_intelligence import AdIntelligenceCollector
-from verticals.proptech.collectors.site_scanner import SiteScannerCollector
-from verticals.proptech.collectors.portal_quality import PortalQualityCollector
-from verticals.proptech.collectors.planning_intel import PlanningIntelCollector
-from verticals.proptech.collectors.social_review import SocialReviewCollector
-from verticals.proptech.analyzers.pain_mapper import PainMapper
 from verticals.proptech.analyzers.icp_classifier import ICPClassifier
+from verticals.proptech.analyzers.pain_mapper import PainMapper
+from verticals.proptech.collectors.ad_intelligence import AdIntelligenceCollector
+from verticals.proptech.collectors.dns_headers import DnsHeadersCollector
+from verticals.proptech.collectors.planning_intel import PlanningIntelCollector
+from verticals.proptech.collectors.portal_quality import PortalQualityCollector
+from verticals.proptech.collectors.site_scanner import SiteScannerCollector
+from verticals.proptech.collectors.social_review import SocialReviewCollector
 
 RULES_PATH = "verticals/proptech/rules"
 RULES_VERSION = "1.0.0"

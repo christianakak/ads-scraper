@@ -14,7 +14,6 @@ import re
 from datetime import datetime
 from typing import Any
 
-
 # ---------------------------------------------------------------------------
 # Lookup tables (extended as new markets are added)
 # ---------------------------------------------------------------------------

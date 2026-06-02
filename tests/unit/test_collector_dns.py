@@ -42,7 +42,6 @@ class TestDetectCdn:
         assert _detect_cdn(headers) is None
 
     def test_case_insensitive(self):
-        headers = {"CF-Ray": "abc"}  # uppercase key
         # Our _detect_cdn lowercases keys internally
         assert _detect_cdn({"cf-ray": "abc"}) == "Cloudflare"
 
@@ -147,18 +146,6 @@ class TestDnsHeadersCollector:
     @pytest.mark.asyncio
     async def test_run_calls_collect_and_normalizes(self, collector):
         """BaseCollector.run() wraps collect() — verify normalization runs."""
-        mock_result_data = {
-            "has_ssl": True,
-            "redirect_chain_length": 1,
-            "domain_reachable": True,
-            "domain_age_years": 3.5,
-            "has_spf": True,
-            "has_dkim": False,
-            "has_dmarc": False,
-            "email_provider": "Google Workspace",
-            "hosting_provider": "Cloudflare",
-        }
-
         with patch.object(collector, "_check_http", new=AsyncMock(return_value={
             "has_ssl": True, "redirect_chain_length": 1, "domain_reachable": True
         })), \

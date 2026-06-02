@@ -28,9 +28,11 @@ jobs:
       - name: Unit tests
         run: PYTHONPATH=. pytest tests/unit/ -v
         env:
-          # Dummy modes on — no real API keys needed in CI
+          # All dummy modes on — no real API keys or network calls in CI
           ADYNTEL_DUMMY_MODE: "True"
           SITE_SCANNER_DUMMY_MODE: "True"
+          PLANNING_DUMMY_MODE: "True"
+          REVIEWS_DUMMY_MODE: "True"
           ANTHROPIC_API_KEY: ""
           SUPABASE_URL: ""
           SUPABASE_SERVICE_KEY: ""

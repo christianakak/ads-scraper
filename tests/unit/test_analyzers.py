@@ -2,19 +2,15 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
-
-import pytest
-
 from core.base.schemas import CollectorResult, M360Module, Severity
+from verticals.proptech.analyzers.icp_classifier import (
+    ICPClassifier,
+    pop_icp_result,
+)
 from verticals.proptech.analyzers.pain_mapper import (
     PainMapper,
     _evaluate_threshold,
     _get_nested,
-)
-from verticals.proptech.analyzers.icp_classifier import (
-    ICPClassifier,
-    pop_icp_result,
 )
 
 RULES_PATH = "verticals/proptech/rules"

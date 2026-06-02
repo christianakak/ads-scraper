@@ -14,7 +14,6 @@ Signals produced:
 from __future__ import annotations
 
 import asyncio
-import re
 from datetime import datetime
 from typing import Any
 
@@ -26,7 +25,6 @@ import whois
 from core.base.collector import BaseCollector
 from core.base.schemas import CollectorResult
 from core.normalizer import NormalizationMixin
-
 
 # ---------------------------------------------------------------------------
 # Lookup tables

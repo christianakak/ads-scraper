@@ -118,7 +118,7 @@ class ICPClassifier(BaseAnalyzer):
 # Shared result cache — engine reads this after analyze() returns
 # ---------------------------------------------------------------------------
 
-_icp_result_cache: dict[int, "_IcpResult"] = {}
+_icp_result_cache: dict[int, _IcpResult] = {}
 
 
 class _IcpResult:
@@ -152,7 +152,7 @@ class _IcpResult:
         return round(best_score / total, 3)
 
 
-def pop_icp_result(collector_results: dict) -> "_IcpResult | None":
+def pop_icp_result(collector_results: dict) -> _IcpResult | None:
     """Called by engine after analyzers run to retrieve ICP classification."""
     return _icp_result_cache.pop(id(collector_results), None)
 

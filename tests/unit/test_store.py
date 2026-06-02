@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from datetime import UTC, datetime
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -26,7 +26,7 @@ def _make_report(**kwargs) -> AuditReport:
         rules_version="1.0.0",
         triage=TriageMeta(review_status=ReviewStatus.AUTO_APPROVED, audit_confidence=0.85),
         cache_meta=CacheMeta(
-            collected_at=datetime.now(tz=timezone.utc),
+            collected_at=datetime.now(tz=UTC),
             cache_hit=False,
             collectors_run=["dns_headers"],
         ),

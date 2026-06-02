@@ -9,13 +9,13 @@ from unittest.mock import MagicMock
 import pytest
 
 from verticals.proptech.collectors.site_scanner import (
+    _FLOOR_PLAN_PROVIDERS,
+    _VIRTUAL_TOUR_PROVIDERS,
     SiteScannerCollector,
     _classify_cta_text,
     _classify_pricing,
     _detect_tech_stack,
     _match_provider,
-    _FLOOR_PLAN_PROVIDERS,
-    _VIRTUAL_TOUR_PROVIDERS,
 )
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"

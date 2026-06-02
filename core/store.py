@@ -13,9 +13,8 @@ Cache strategy:
 from __future__ import annotations
 
 import asyncio
-import json
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from core.base.schemas import AuditReport
@@ -37,7 +36,7 @@ class SupabaseStore:
     # ------------------------------------------------------------------
 
     async def get_cached(self, domain: str, vertical: str) -> AuditReport | None:
-        cutoff = (datetime.now(tz=timezone.utc) - timedelta(days=self._ttl)).isoformat()
+        cutoff = (datetime.now(tz=UTC) - timedelta(days=self._ttl)).isoformat()
         try:
             result = await asyncio.to_thread(
                 lambda: (

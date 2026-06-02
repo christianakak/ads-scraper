@@ -19,7 +19,7 @@ from typing import Any
 
 import anthropic
 
-from .base.schemas import AuditReport, M360Module, OutboundCopy, PainSignal, Severity
+from .base.schemas import AuditReport, M360Module, OutboundCopy, PainSignal
 
 logger = logging.getLogger(__name__)
 

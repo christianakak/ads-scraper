@@ -20,7 +20,6 @@ from core.base.schemas import (
     AuditRequest,
     ClayFlat,
     Geography,
-    OutcomeRequest,
     OutcomeResponse,
     Vertical,
 )
@@ -241,9 +240,9 @@ def _build_clay_flat(report) -> ClayFlat:  # type: ignore[return]
     dns = report.raw_collector_output.get("dns_headers", {})
     site = report.raw_collector_output.get("site_scanner", {})
     ads = report.raw_collector_output.get("ad_intelligence", {})
-    portal = report.raw_collector_output.get("portal_quality", {})
-    planning = report.raw_collector_output.get("planning_intel", {})
-    reviews = report.raw_collector_output.get("social_review", {})
+    _portal = report.raw_collector_output.get("portal_quality", {})
+    _planning = report.raw_collector_output.get("planning_intel", {})
+    _reviews = report.raw_collector_output.get("social_review", {})
     ts = report.tech_stack
 
     return ClayFlat(

@@ -23,7 +23,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
-import re
+from datetime import UTC
 from pathlib import Path
 from typing import Any
 
@@ -261,13 +261,12 @@ class SiteScannerCollector(NormalizationMixin, BaseCollector):
         freshness_days: int | None = None
         if last_post:
             try:
-                from datetime import datetime, timezone
+                from datetime import datetime
                 dt = datetime.fromisoformat(last_post.replace("Z", "+00:00"))
                 if dt.tzinfo is None:
-                    from datetime import timezone
-                    dt = dt.replace(tzinfo=timezone.utc)
-                from datetime import datetime, timezone
-                freshness_days = (datetime.now(tz=timezone.utc) - dt).days
+                    dt = dt.replace(tzinfo=UTC)
+                from datetime import datetime
+                freshness_days = (datetime.now(tz=UTC) - dt).days
             except Exception:
                 pass
 
@@ -313,7 +312,7 @@ class SiteScannerCollector(NormalizationMixin, BaseCollector):
 
             mobile_score = int((categories.get("performance", {}).get("score") or 0) * 100)
             fcp_ms = int(
-                (audits.get("first-contentful-paint", {}).get("numericValue") or 0)
+                audits.get("first-contentful-paint", {}).get("numericValue") or 0
             )
 
             # Fetch desktop score separately

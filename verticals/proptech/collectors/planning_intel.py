@@ -20,7 +20,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -198,7 +198,7 @@ def _build_signals(apps: list[dict], site: dict[str, Any]) -> dict[str, Any]:
     dated.sort(key=lambda x: x[1], reverse=True)
 
     most_recent_app, most_recent_date = dated[0] if dated else (apps[0], None)
-    now = datetime.now(tz=timezone.utc)
+    now = datetime.now(tz=UTC)
 
     days_since = (now - most_recent_date).days if most_recent_date else None
     unit_count = _extract_unit_count(most_recent_app.get("description", ""))
@@ -227,7 +227,7 @@ def _build_signals(apps: list[dict], site: dict[str, Any]) -> dict[str, Any]:
 def _parse_date(value: str) -> datetime | None:
     for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d %B %Y"):
         try:
-            return datetime.strptime(value.strip(), fmt).replace(tzinfo=timezone.utc)
+            return datetime.strptime(value.strip(), fmt).replace(tzinfo=UTC)
         except ValueError:
             continue
     return None

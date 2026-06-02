@@ -131,8 +131,6 @@ class TestFullAuditFlow:
         r1 = await auditor.audit(AuditRequest(domain="alpha-homes.co.uk", geography=Geography.UK))
         r2 = await auditor.audit(AuditRequest(domain="beta-residences.co.uk", geography=Geography.UK))
         # Pain signals or personas may differ across different dummy scenarios
-        r1_signals = {s.signal_id for s in r1.pain_signals}
-        r2_signals = {s.signal_id for s in r2.pain_signals}
         # Both should have valid reports even if identical (hash collision acceptable)
         assert r1.domain == "alpha-homes.co.uk"
         assert r2.domain == "beta-residences.co.uk"

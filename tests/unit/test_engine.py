@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -16,11 +15,9 @@ from core.base.schemas import (
     PainSignal,
     ReviewStatus,
     Severity,
-    Vertical,
 )
 from core.engine import DomainAuditor
 from core.registry import VerticalRegistry
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

@@ -21,7 +21,6 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -30,7 +29,6 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from core.base.collector import BaseCollector
 from core.base.schemas import CollectorResult
 from core.normalizer import NormalizationMixin
-from core.stealth import StealthClient
 
 _FIXTURES_DIR = Path(__file__).parent.parent.parent.parent / "tests" / "fixtures"
 _DUMMY_SCENARIOS = [
