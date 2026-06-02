@@ -40,15 +40,28 @@ _PENDING_REVIEW_THRESHOLD = 0.60
 
 
 class DomainAuditor:
-    def __init__(self, settings: Any, store: Any | None = None) -> None:
+    def __init__(
+        self,
+        settings: Any,
+        store: Any | None = None,
+        on_collector_done: Any | None = None,
+    ) -> None:
         """
         Args:
-            settings: Config instance (passed to collectors)
-            store:    Optional persistence layer (SupabaseStore).
-                      When None, operates fully stateless — useful for CLI and tests.
+            settings:          Config instance (passed to collectors)
+            store:             Optional persistence layer (SupabaseStore).
+            on_collector_done: Optional callback(CollectorResult) called after each
+                               collector finishes. Used by the terminal UI for live updates.
         """
         self.settings = settings
         self.store = store
+        self._on_collector_done = on_collector_done
+
+    async def _run(self, cls: Any, domain: str, geography: str) -> CollectorResult:
+        result = await cls(self.settings).run(domain, geography)
+        if self._on_collector_done:
+            self._on_collector_done(result)
+        return result
 
     async def audit(self, request: AuditRequest) -> AuditReport:
         # ------------------------------------------------------------------
@@ -74,8 +87,7 @@ class DomainAuditor:
         collector_results: list[CollectorResult] = []
 
         if screening_class:
-            screener = screening_class(self.settings)
-            screening_result = await screener.run(request.domain, request.geography.value)
+            screening_result = await self._run(screening_class, request.domain, request.geography.value)
             collector_results.append(screening_result)
 
             if not screening_result.success:
@@ -94,13 +106,13 @@ class DomainAuditor:
             # Parallel: all non-browser collectors at once
             parallel_results: list[CollectorResult] = []
             if parallel_classes:
-                tasks = [cls(self.settings).run(request.domain, request.geography.value) for cls in parallel_classes]
+                tasks = [self._run(cls, request.domain, request.geography.value) for cls in parallel_classes]
                 parallel_results = list(await asyncio.gather(*tasks))
 
             # Sequential: browser collectors one at a time (Browserless concurrent session limit)
             browser_results: list[CollectorResult] = []
             for cls in browser_classes:
-                result = await cls(self.settings).run(request.domain, request.geography.value)
+                result = await self._run(cls, request.domain, request.geography.value)
                 browser_results.append(result)
 
             collector_results.extend(parallel_results + browser_results)
