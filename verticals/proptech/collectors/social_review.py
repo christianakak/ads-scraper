@@ -57,6 +57,7 @@ class SocialReviewCollector(NormalizationMixin, BaseCollector):
             getattr(settings, "google_api_key", "")
             or getattr(settings, "google_pagespeed_api_key", "")
         )
+        self._trustpilot_api_key: str = getattr(settings, "trustpilot_api_key", "")
 
     async def collect(self, domain: str, geography: str) -> CollectorResult:
         if not self._dummy_mode:
@@ -115,27 +116,33 @@ class SocialReviewCollector(NormalizationMixin, BaseCollector):
     async def _fetch_trustpilot(
         self, client: StealthClient, domain: str, company: str, geography: str
     ) -> dict[str, Any]:
-        # Step 1: try to extract businessunitId from developer's own homepage
-        # (Trustpilot widget embeds it in the page HTML — no browser needed)
+        # Step 1: extract businessunitId from developer's homepage HTML (no browser)
         tp_id = await _extract_trustpilot_id(domain, client)
 
-        # Step 2: try URL slugs in order of reliability
-        bare_domain = domain.removeprefix("www.")
-        slugs = [bare_domain, domain, company.lower().replace(" ", "-")]
+        # Step 2: use Trustpilot Business API if key is available (free tier OK)
+        if self._trustpilot_api_key and tp_id:
+            api_data = await _fetch_trustpilot_api(tp_id, self._trustpilot_api_key)
+            if api_data:
+                api_data["trustpilot_business_id"] = tp_id
+                return api_data
 
-        for slug in slugs:
-            try:
-                r = await client.get(
-                    f"https://uk.trustpilot.com/review/{slug}",
-                    referer="https://www.trustpilot.com",
-                )
-                if r.status_code == 200 and "ratingValue" in r.text:
-                    result = _parse_trustpilot_html(r.text)
-                    if tp_id:
+        # Step 3: HTML scraping (Trustpilot blocks most headless requests — best-effort)
+        bare_domain = domain.removeprefix("www.")
+        www_domain = f"www.{bare_domain}"
+        name_slug = company.lower().replace(" ", "-")
+        for host in ("uk.trustpilot.com", "www.trustpilot.com"):
+            for slug in (bare_domain, www_domain, name_slug):
+                try:
+                    r = await client.get(
+                        f"https://{host}/review/{slug}",
+                        referer="https://www.trustpilot.com",
+                    )
+                    if r.status_code == 200 and "ratingValue" in r.text:
+                        result = _parse_trustpilot_html(r.text)
                         result["trustpilot_business_id"] = tp_id
-                    return result
-            except Exception:
-                continue
+                        return result
+                except Exception:
+                    continue
 
         return {"trustpilot_business_id": tp_id} if tp_id else {}
 
@@ -151,6 +158,26 @@ class SocialReviewCollector(NormalizationMixin, BaseCollector):
 # ---------------------------------------------------------------------------
 # Parsers + merging
 # ---------------------------------------------------------------------------
+
+async def _fetch_trustpilot_api(business_unit_id: str, api_key: str) -> dict[str, Any]:
+    """Fetch rating summary from Trustpilot Business API (free tier)."""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as c:
+            r = await c.get(
+                f"https://api.trustpilot.com/v1/business-units/{business_unit_id}",
+                headers={"apikey": api_key},
+            )
+            if r.status_code != 200:
+                return {}
+            data = r.json()
+            score = data.get("score", {})
+            return {
+                "trustpilot_score": score.get("trustScore"),
+                "trustpilot_review_count": data.get("numberOfReviews", {}).get("total", 0),
+            }
+    except Exception:
+        return {}
+
 
 async def _extract_trustpilot_id(domain: str, client: StealthClient) -> str | None:
     """

@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     # Legacy aliases — accepted for backwards compat
     google_pagespeed_api_key: str = Field(default="", alias="GOOGLE_PAGESPEED_API_KEY")
 
+    # Trustpilot Business API (free tier at developers.trustpilot.com — 1000 calls/day)
+    # Without this, review ratings are unavailable (Trustpilot blocks HTTP scraping).
+    trustpilot_api_key: str = Field(default="", alias="TRUSTPILOT_API_KEY")
+
     # Legacy — kept as fallback only
     meta_ad_library_token: str = Field(default="", alias="META_AD_LIBRARY_TOKEN")
 
