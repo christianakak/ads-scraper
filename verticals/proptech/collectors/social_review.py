@@ -70,12 +70,14 @@ class SocialReviewCollector(NormalizationMixin, BaseCollector):
         return result
 
     async def _live_fetch(self, domain: str, geography: str) -> dict[str, Any]:
+        import asyncio
+
         company = _domain_to_name(domain)
         client = StealthClient(geography)
 
-        google_data, trustpilot_data = await __import__("asyncio").gather(
+        google_data, trustpilot_data = await asyncio.gather(
             self._fetch_google_places(company),
-            self._fetch_trustpilot(client, company, geography),
+            self._fetch_trustpilot(client, domain, company, geography),
             return_exceptions=True,
         )
 
@@ -111,18 +113,31 @@ class SocialReviewCollector(NormalizationMixin, BaseCollector):
             return {}
 
     async def _fetch_trustpilot(
-        self, client: StealthClient, company: str, geography: str
+        self, client: StealthClient, domain: str, company: str, geography: str
     ) -> dict[str, Any]:
-        slug = company.lower().replace(" ", "-")
-        try:
-            r = await client.get(
-                f"https://uk.trustpilot.com/review/{slug}",
-                referer="https://www.trustpilot.com",
-            )
-            html = r.text
-            return _parse_trustpilot_html(html)
-        except Exception:
-            return {}
+        # Step 1: try to extract businessunitId from developer's own homepage
+        # (Trustpilot widget embeds it in the page HTML — no browser needed)
+        tp_id = await _extract_trustpilot_id(domain, client)
+
+        # Step 2: try URL slugs in order of reliability
+        bare_domain = domain.removeprefix("www.")
+        slugs = [bare_domain, domain, company.lower().replace(" ", "-")]
+
+        for slug in slugs:
+            try:
+                r = await client.get(
+                    f"https://uk.trustpilot.com/review/{slug}",
+                    referer="https://www.trustpilot.com",
+                )
+                if r.status_code == 200 and "ratingValue" in r.text:
+                    result = _parse_trustpilot_html(r.text)
+                    if tp_id:
+                        result["trustpilot_business_id"] = tp_id
+                    return result
+            except Exception:
+                continue
+
+        return {"trustpilot_business_id": tp_id} if tp_id else {}
 
     def _load_dummy(self, domain: str) -> CollectorResult:
         idx = int(hashlib.md5(domain.encode()).hexdigest(), 16) % len(_DUMMY_SCENARIOS)
@@ -136,6 +151,27 @@ class SocialReviewCollector(NormalizationMixin, BaseCollector):
 # ---------------------------------------------------------------------------
 # Parsers + merging
 # ---------------------------------------------------------------------------
+
+async def _extract_trustpilot_id(domain: str, client: StealthClient) -> str | None:
+    """
+    Fetch the developer's homepage and extract the Trustpilot businessunitId
+    from embedded widget markup — no browser required.
+    """
+    try:
+        resp = await client.get(f"https://{domain}", skip_jitter=True)
+        html = resp.text
+        # Widget iframe: businessunitId=5803fd7b0000ff0005962025
+        m = re.search(r"businessunitId[=:]['\"\s]*([a-f0-9]{24})", html, re.I)
+        if m:
+            return m.group(1)
+        # Data attribute: data-businessunit-id="..."
+        m = re.search(r'data-businessunit-id=["\']([a-f0-9]{24})["\']', html, re.I)
+        if m:
+            return m.group(1)
+    except Exception:
+        pass
+    return None
+
 
 def _parse_trustpilot_html(html: str) -> dict[str, Any]:
     rating_match = re.search(r'"ratingValue":\s*"?([\d.]+)"?', html)

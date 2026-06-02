@@ -48,7 +48,7 @@ class TestParseDate:
 
 class TestBuildSignals:
     def test_empty_apps(self):
-        signals = _build_signals([])
+        signals = _build_signals([], {})
         assert signals["development_stage"] == "unknown"
         assert signals["planning_granted_date"] is None
 
@@ -61,7 +61,7 @@ class TestBuildSignals:
             "decision_date": "2026-05-01",
             "unit_count": 72,
         }]
-        signals = _build_signals(apps)
+        signals = _build_signals(apps, {})
         assert signals["development_stage"] == "pre_launch"
         assert signals["estimated_unit_count"] == 72
 

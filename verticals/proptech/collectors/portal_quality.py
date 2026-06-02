@@ -25,6 +25,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from tenacity import retry, stop_after_attempt, wait_exponential
+
 from core.base.collector import BaseCollector
 from core.base.schemas import CollectorResult
 from core.normalizer import NormalizationMixin
@@ -38,7 +40,7 @@ _DUMMY_SCENARIOS = [
     "portal_quality_strong.json",
 ]
 
-_RIGHTMOVE_SEARCH = "https://www.rightmove.co.uk/property-new-homes/find.html"
+_RIGHTMOVE_NEW_HOMES = "https://www.rightmove.co.uk/new-homes/find.html"
 _HEMNET_SEARCH = "https://www.hemnet.se/bostader"
 
 
@@ -67,6 +69,7 @@ class PortalQualityCollector(NormalizationMixin, BaseCollector):
             data_source="skipped",
         )
 
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=2, min=4, max=15))
     async def _live_scrape(self, domain: str, geography: str) -> dict[str, Any]:
         from playwright.async_api import async_playwright
 
@@ -84,12 +87,14 @@ class PortalQualityCollector(NormalizationMixin, BaseCollector):
             "price_text": None,
             "portal_cta_type": None,
             "listing_count": 0,
+            "description_length": 0,
             "portal_names": [],
         }
 
         async with async_playwright() as p:
             browser = await p.chromium.connect_over_cdp(
-                f"wss://chrome.browserless.io?token={self._browserless_token}"
+                f"wss://chrome.browserless.io?token={self._browserless_token}",
+                timeout=30_000,
             )
             page = await browser.new_page()
             try:
@@ -116,34 +121,63 @@ class PortalQualityCollector(NormalizationMixin, BaseCollector):
 
 async def _scrape_rightmove(page: Any, company: str, results: dict) -> None:
     try:
-        await page.goto(
-            f"{_RIGHTMOVE_SEARCH}?searchType=DEVELOPMENT&locationIdentifier=USERDEFINEDAREA%5E%7B%22id%22%3A8%7D&includeSSTC=false",
-            wait_until="domcontentloaded", timeout=20_000,
+        # Search by developer keyword — more reliable than filling a search box
+        search_url = (
+            f"{_RIGHTMOVE_NEW_HOMES}?searchType=DEVELOPMENT"
+            f"&keywords={company.replace(' ', '%20')}"
+            f"&locationIdentifier=USERDEFINEDAREA%5E%7B%22id%22%3A8%7D"
         )
-        # Search by developer name in the search box
-        await page.fill('input[placeholder*="earch"]', company)
-        await page.wait_for_timeout(1500)
+        await page.goto(search_url, wait_until="domcontentloaded", timeout=20_000)
+        await page.wait_for_timeout(2000)
 
-        cards = await page.query_selector_all('.propertyCard, [data-test="property-details"]')
+        # Multiple card selectors — Rightmove updates their markup regularly
+        card_selectors = [
+            '[data-test="propertyCard"]',
+            '.propertyCard',
+            '[class*="property-card"]',
+            '[class*="l-searchResult"]',
+        ]
+        cards = []
+        for sel in card_selectors:
+            cards = await page.query_selector_all(sel)
+            if cards:
+                break
+
         if cards:
             results["rightmove_listed"] = True
             results["portal_listed"] = True
             results["portal_names"].append("Rightmove")
             results["listing_count"] = len(cards)
 
-            # Inspect first listing
             first = cards[0]
-            imgs = await first.query_selector_all("img")
+            # Photo count from image elements
+            imgs = await first.query_selector_all("img[src]")
             results["listing_photo_count"] = len(imgs)
-            fp = await first.query_selector('[data-test*="floorplan"], [class*="floorplan"]')
+            # Floor plan badge
+            fp = await first.query_selector(
+                '[data-test*="floorplan"], [class*="floorplan"], [aria-label*="floor plan" i]'
+            )
             results["has_floorplan_on_portal"] = fp is not None
-            vt = await first.query_selector('[data-test*="virtual"], [class*="virtual"]')
+            # Virtual tour badge
+            vt = await first.query_selector(
+                '[data-test*="virtual"], [class*="virtual-tour"], [aria-label*="virtual tour" i]'
+            )
             results["has_virtual_tour_on_portal"] = vt is not None
-            price_el = await first.query_selector('[class*="price"]')
+            # Price
+            price_el = await first.query_selector(
+                '[class*="price"], [data-test*="price"], .propertyCard-priceValue'
+            )
             if price_el:
                 price_text = (await price_el.inner_text()).strip()
                 results["price_shown"] = bool(re.search(r"[£€]|kr", price_text))
                 results["price_text"] = price_text[:80]
+            # Description length (quality signal)
+            desc_el = await first.query_selector(
+                '[class*="description"], [data-test*="description"], .propertyCard-description'
+            )
+            if desc_el:
+                desc_text = (await desc_el.inner_text()).strip()
+                results["description_length"] = len(desc_text)
     except Exception:
         pass
 
