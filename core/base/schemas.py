@@ -74,6 +74,8 @@ class CollectorResult(BaseModel):
     success: bool = True
     error: str | None = None
     data: dict[str, Any] = Field(default_factory=dict)
+    # "real" = live API/scrape, "dummy" = fixture data, "skipped" = no credentials
+    data_source: str = "real"
 
 
 # ---------------------------------------------------------------------------
@@ -135,6 +137,8 @@ class CacheMeta(BaseModel):
     cache_hit: bool
     collectors_run: list[str]
     collector_errors: list[dict[str, Any]] = Field(default_factory=list)
+    # Per-collector data provenance: "real" | "dummy" | "skipped"
+    data_quality: dict[str, str] = Field(default_factory=dict)
 
 
 class ClayFlat(BaseModel):
@@ -164,6 +168,10 @@ class ClayFlat(BaseModel):
     domain_age_years: float | None = None
     rules_version: str | None = None
     collected_at: datetime | None = None
+    # Data quality — surfaces which collectors used real vs dummy/skipped data
+    has_dummy_data: bool = False
+    dummy_collectors: list[str] = Field(default_factory=list)
+    skipped_collectors: list[str] = Field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------

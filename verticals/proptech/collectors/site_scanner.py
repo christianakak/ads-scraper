@@ -140,27 +140,26 @@ class SiteScannerCollector(NormalizationMixin, BaseCollector):
                 **(pagespeed_data if isinstance(pagespeed_data, dict) else {}),
             }
             return CollectorResult(
-                collector_id=self.collector_id,
-                domain=domain,
-                success=True,
-                data=data,
+                collector_id=self.collector_id, domain=domain,
+                success=True, data=data, data_source="real",
             )
 
         if self._dummy_mode:
-            # PageSpeed still runs in dummy mode — it's free and needs no browser
+            # PageSpeed still runs in dummy mode — free, no browser needed
             pagespeed_data = await self._pagespeed_scan(url)
             dummy = self._load_dummy(domain)
             if pagespeed_data:
                 dummy.data.update(pagespeed_data)
+            dummy.data_source = "dummy"
             return dummy
 
-        # No browser, no dummy mode — still run PageSpeed
+        # No browser, no dummy — PageSpeed only (real load time at minimum)
         pagespeed_data = await self._pagespeed_scan(url)
         return CollectorResult(
-            collector_id=self.collector_id,
-            domain=domain,
+            collector_id=self.collector_id, domain=domain,
             success=True,
             data=pagespeed_data or {"_skipped": "no_browser_configured"},
+            data_source="real" if pagespeed_data else "skipped",
         )
 
     # ------------------------------------------------------------------

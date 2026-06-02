@@ -18,13 +18,21 @@ class Settings(BaseSettings):
     # Adyntel (primary ad intelligence — adyntel.com)
     adyntel_api_key: str = Field(default="", alias="ADYNTEL_API_KEY")
     adyntel_email: str = Field(default="", alias="ADYNTEL_EMAIL")
-    # When True and no API key set, collector returns deterministic dummy data
-    # for end-to-end POC testing. Set False in production.
-    adyntel_dummy_mode: bool = Field(default=True, alias="ADYNTEL_DUMMY_MODE")
+    # False in prod — without a key, collector skips cleanly. True only for local POC.
+    adyntel_dummy_mode: bool = Field(default=False, alias="ADYNTEL_DUMMY_MODE")
 
-    # Site Scanner — Browserless.io (managed Chromium)
+    # Site Scanner + Portal Quality — Browserless.io (managed Chromium, paid)
+    # True: use fixture data when no token (better than empty). False: skip cleanly.
     site_scanner_dummy_mode: bool = Field(default=True, alias="SITE_SCANNER_DUMMY_MODE")
     use_local_browser: bool = Field(default=False, alias="USE_LOCAL_BROWSER")
+
+    # Planning Intel — planning.data.gov.uk (free, no auth required)
+    # False: always attempt live. True: fixture only (for offline testing).
+    planning_dummy_mode: bool = Field(default=False, alias="PLANNING_DUMMY_MODE")
+
+    # Social/Review — Trustpilot scrape (free) + Google Places (needs GOOGLE_API_KEY)
+    # False: always attempt live. True: fixture only (for offline testing).
+    reviews_dummy_mode: bool = Field(default=False, alias="REVIEWS_DUMMY_MODE")
 
     # Google APIs — one key, enable PageSpeed Insights + Places APIs on same GCP project
     google_api_key: str = Field(default="", alias="GOOGLE_API_KEY")

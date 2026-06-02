@@ -292,4 +292,17 @@ def _build_clay_flat(report) -> ClayFlat:  # type: ignore[return]
         # Meta
         rules_version=report.rules_version,
         collected_at=report.cache_meta.collected_at if report.cache_meta else None,
+
+        # Data quality — tells Clay which signals are real vs dummy/skipped
+        has_dummy_data=any(
+            v == "dummy" for v in (report.cache_meta.data_quality.values() if report.cache_meta else [])
+        ),
+        dummy_collectors=[
+            k for k, v in (report.cache_meta.data_quality.items() if report.cache_meta else [])
+            if v == "dummy"
+        ],
+        skipped_collectors=[
+            k for k, v in (report.cache_meta.data_quality.items() if report.cache_meta else [])
+            if v == "skipped"
+        ],
     )

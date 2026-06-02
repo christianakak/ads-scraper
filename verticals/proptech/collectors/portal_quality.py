@@ -53,21 +53,18 @@ class PortalQualityCollector(NormalizationMixin, BaseCollector):
     async def collect(self, domain: str, geography: str) -> CollectorResult:
         if self._browserless_token and not self._dummy_mode:
             data = await self._live_scrape(domain, geography)
-        elif self._dummy_mode:
-            return self._load_dummy(domain)
-        else:
             return CollectorResult(
-                collector_id=self.collector_id,
-                domain=domain,
-                success=True,
-                data={"_skipped": "no_browser_configured"},
+                collector_id=self.collector_id, domain=domain,
+                success=True, data=data, data_source="real",
             )
-
+        if self._dummy_mode:
+            result = self._load_dummy(domain)
+            result.data_source = "dummy"
+            return result
         return CollectorResult(
-            collector_id=self.collector_id,
-            domain=domain,
-            success=True,
-            data=data,
+            collector_id=self.collector_id, domain=domain,
+            success=True, data={"_skipped": "no_browser_configured"},
+            data_source="skipped",
         )
 
     async def _live_scrape(self, domain: str, geography: str) -> dict[str, Any]:

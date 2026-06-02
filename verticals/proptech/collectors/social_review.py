@@ -52,7 +52,7 @@ class SocialReviewCollector(NormalizationMixin, BaseCollector):
 
     def __init__(self, settings: Any) -> None:
         super().__init__(settings)
-        self._dummy_mode: bool = getattr(settings, "site_scanner_dummy_mode", True)
+        self._dummy_mode: bool = getattr(settings, "reviews_dummy_mode", False)
         self._google_api_key: str = (
             getattr(settings, "google_api_key", "")
             or getattr(settings, "google_pagespeed_api_key", "")
@@ -62,9 +62,12 @@ class SocialReviewCollector(NormalizationMixin, BaseCollector):
         if not self._dummy_mode:
             data = await self._live_fetch(domain, geography)
             return CollectorResult(
-                collector_id=self.collector_id, domain=domain, success=True, data=data,
+                collector_id=self.collector_id, domain=domain,
+                success=True, data=data, data_source="real",
             )
-        return self._load_dummy(domain)
+        result = self._load_dummy(domain)
+        result.data_source = "dummy"
+        return result
 
     async def _live_fetch(self, domain: str, geography: str) -> dict[str, Any]:
         company = _domain_to_name(domain)

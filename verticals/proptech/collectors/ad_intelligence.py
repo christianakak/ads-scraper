@@ -81,22 +81,22 @@ class AdIntelligenceCollector(NormalizationMixin, BaseCollector):
     async def collect(self, domain: str, geography: str) -> CollectorResult:
         if self._api_key:
             raw = await self._fetch_adyntel(domain, geography)
-        elif self._dummy_mode:
-            raw = self._load_dummy(domain)
-        else:
+            signals = _compute_signals(raw)
             return CollectorResult(
-                collector_id=self.collector_id,
-                domain=domain,
-                success=True,
-                data={"has_active_ads": None, "_skipped": "no_credentials"},
+                collector_id=self.collector_id, domain=domain,
+                success=True, data=signals, data_source="real",
             )
-
-        signals = _compute_signals(raw)
+        if self._dummy_mode:
+            raw = self._load_dummy(domain)
+            signals = _compute_signals(raw)
+            return CollectorResult(
+                collector_id=self.collector_id, domain=domain,
+                success=True, data=signals, data_source="dummy",
+            )
         return CollectorResult(
-            collector_id=self.collector_id,
-            domain=domain,
-            success=True,
-            data=signals,
+            collector_id=self.collector_id, domain=domain,
+            success=True, data={"has_active_ads": None, "_skipped": "no_credentials"},
+            data_source="skipped",
         )
 
     # ------------------------------------------------------------------

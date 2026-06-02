@@ -118,6 +118,7 @@ class DnsHeadersCollector(NormalizationMixin, BaseCollector):
                 success=False,
                 error="domain_unreachable",
                 data=data,
+                data_source="real",
             )
 
         return CollectorResult(
@@ -125,6 +126,7 @@ class DnsHeadersCollector(NormalizationMixin, BaseCollector):
             domain=domain,
             success=True,
             data=data,
+            data_source="real",
         )
 
     # ------------------------------------------------------------------

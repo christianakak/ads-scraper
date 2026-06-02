@@ -198,6 +198,7 @@ class DomainAuditor:
                 cache_hit=False,
                 collectors_run=[r.collector_id for r in collector_results],
                 collector_errors=errors,
+                data_quality={r.collector_id: r.data_source for r in collector_results},
             ),
             raw_collector_output={r.collector_id: r.data for r in collector_results},
         )
