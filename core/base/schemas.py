@@ -159,7 +159,7 @@ class ClayFlat(BaseModel):
     has_interactive_floor_plans: bool | None = None
     cta_type: str | None = None
     load_time_ms: int | None = None
-    mobile_score: int | None = None
+    mobile_score: float | None = None
     project_count: int | None = None
     crm_detected: str | None = None
     has_facebook_pixel: bool | None = None
