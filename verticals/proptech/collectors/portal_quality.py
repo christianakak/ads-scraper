@@ -46,6 +46,7 @@ _HEMNET_SEARCH = "https://www.hemnet.se/bostader"
 
 class PortalQualityCollector(NormalizationMixin, BaseCollector):
     collector_id = "portal_quality"
+    requires_browser = True
 
     def __init__(self, settings: Any) -> None:
         super().__init__(settings)

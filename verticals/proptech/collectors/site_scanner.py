@@ -114,6 +114,7 @@ _WAPPALYZER_HOSTING = {
 
 class SiteScannerCollector(NormalizationMixin, BaseCollector):
     collector_id = "site_scanner"
+    requires_browser = True
 
     def __init__(self, settings: Any) -> None:
         super().__init__(settings)
@@ -184,11 +185,20 @@ class SiteScannerCollector(NormalizationMixin, BaseCollector):
                     "AppleWebKit/537.36 (KHTML, like Gecko) "
                     "Chrome/124.0.0.0 Safari/537.36"
                 ),
+                ignore_https_errors=True,
             )
             page = await context.new_page()
 
             try:
-                await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
+                # Try bare domain first; on SSL error try www-prefixed version
+                try:
+                    await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
+                except Exception as e:
+                    if "ERR_CERT" in str(e) or "SSL" in str(e).upper() or "net::" in str(e):
+                        www_url = url.replace("https://", "https://www.", 1) if "www." not in url else url
+                        await page.goto(www_url, wait_until="domcontentloaded", timeout=30_000)
+                    else:
+                        raise
                 # Let JS settle — most PropTech sites are React/Next.js
                 await page.wait_for_timeout(2_000)
                 html = await page.content()

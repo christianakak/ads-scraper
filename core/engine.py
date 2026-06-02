@@ -83,15 +83,27 @@ class DomainAuditor:
                 return self._unreachable_report(request, rules_version, screening_result.error)
 
         # ------------------------------------------------------------------
-        # 3. Phase 1: Remaining collectors in parallel
+        # 3. Phase 1: Run collectors — browser ones sequentially to avoid 529
         # ------------------------------------------------------------------
         remaining_classes = [c for c in collector_classes if not getattr(c, "is_screening", False)]
 
         if remaining_classes:
-            instances = [cls(self.settings) for cls in remaining_classes]
-            tasks = [inst.run(request.domain, request.geography.value) for inst in instances]
-            phase1_results: list[CollectorResult] = list(await asyncio.gather(*tasks))
-            collector_results.extend(phase1_results)
+            parallel_classes = [c for c in remaining_classes if not getattr(c, "requires_browser", False)]
+            browser_classes = [c for c in remaining_classes if getattr(c, "requires_browser", False)]
+
+            # Parallel: all non-browser collectors at once
+            parallel_results: list[CollectorResult] = []
+            if parallel_classes:
+                tasks = [cls(self.settings).run(request.domain, request.geography.value) for cls in parallel_classes]
+                parallel_results = list(await asyncio.gather(*tasks))
+
+            # Sequential: browser collectors one at a time (Browserless concurrent session limit)
+            browser_results: list[CollectorResult] = []
+            for cls in browser_classes:
+                result = await cls(self.settings).run(request.domain, request.geography.value)
+                browser_results.append(result)
+
+            collector_results.extend(parallel_results + browser_results)
 
         collector_map = {r.collector_id: r for r in collector_results}
         errors = [
