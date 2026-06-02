@@ -56,7 +56,10 @@ class StealthClient:
             "User-Agent": random.choice(_UA_POOL),
             "Accept-Language": self._lang,
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-            "Accept-Encoding": "gzip, deflate, br",
+            # Do NOT set Accept-Encoding — let httpx manage it so it only advertises
+            # encodings it can actually decode (gzip/deflate). Manual br header causes
+            # servers to send brotli-compressed responses that httpx can't decode
+            # unless the `brotli` package is installed.
             "DNT": "1",
             "Connection": "keep-alive",
             "Upgrade-Insecure-Requests": "1",

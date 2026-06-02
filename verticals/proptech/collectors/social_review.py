@@ -210,6 +210,7 @@ def _merge_reviews(google: dict, trustpilot: dict) -> dict[str, Any]:
         "has_reviews_page": len(platforms) > 0,
         "review_platforms": platforms,
         "trustpilot_score": trustpilot.get("trustpilot_score"),
+        "trustpilot_business_id": trustpilot.get("trustpilot_business_id"),
         "google_rating": google.get("google_rating"),
         "homeviews_score": None,
     }
